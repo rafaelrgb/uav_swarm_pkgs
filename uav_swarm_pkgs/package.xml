@@ -1,0 +1,27 @@
+<?xml version="1.0"?>
+<package>
+  <name>uav_swarm_pkgs</name>
+  <version>0.0.0</version>
+  <description>Uav_swarm_pkgs contains packages and tools to simulate and control swarms of Unmaned Aerial Vehicles</description>
+
+  <maintainer email="faerugb@gmail.com">Rafael Gomes Braga</maintainer>
+
+  <author>Rafael Gomes Braga</author>
+
+  <license>TODO</license>
+
+  <url type="website">https://github.com/rafaelrgb/uav_swarm_pkgs</url>
+
+  <!-- Dependencies which this package needs to build itself. -->
+  <buildtool_depend>catkin</buildtool_depend>
+
+  <!-- Dependencies needed after this package is compiled. -->
+  <run_depend>uav_swarm_description</run_depend>
+  <run_depend>uav_swarm_control</run_depend>
+  <run_depend>uav_swarm_msgs</run_depend>
+  <run_depend>uav_swarm_evaluation</run_depend>
+
+  <export>
+	<metapackage />
+  </export>
+</package>

@@ -1,0 +1,19 @@
+<?xml version="1.0"?>
+<package>
+  <name>uav_swarm_msgs</name>
+  <version>0.0.0</version>
+  <description>The uav_swarm_msgs package provides custom messages to communicate between members of a swarm</description>
+
+  <maintainer email="faerugb@gmail.com">Rafael Gomes Braga</maintainer>
+
+  <author>Rafael Gomes Braga</author>
+  
+  <license>TODO</license>
+
+  <buildtool_depend>catkin</buildtool_depend>
+  <build_depend>nav_msgs</build_depend>
+  <build_depend>message_generation</build_depend>
+  <run_depend>nav_msgs</run_depend>
+  <run_depend>message_runtime</run_depend>
+  
+</package>

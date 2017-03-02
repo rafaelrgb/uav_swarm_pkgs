@@ -1,0 +1,15 @@
+<?xml version="1.0"?>
+<package>
+  <name>uav_swarm_description</name>
+  <version>0.0.0</version>
+  <description>The uav_swarm_description package contains basic quadrotors URDF models</description>
+
+  <maintainer email="faerugb@gmail.com">Rafael Gomes Braga</maintainer>
+
+  <author>Rafael Gomes Braga</author>
+
+  <license>TODO</license>
+
+  <buildtool_depend>catkin</buildtool_depend>
+  
+</package>
