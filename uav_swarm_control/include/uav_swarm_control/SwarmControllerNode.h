@@ -27,9 +27,9 @@
 
 #define PI 3.14159265
 
-#define MAXVEL   5.0
+#define MAXVEL   1.0
 
-#define VISION_DISTANCE 100.0
+#define VISION_DISTANCE 10.0
 
 namespace uav_swarm_control
 {
@@ -62,7 +62,7 @@ private:
 
   // Position of elements in the system
   nav_msgs::Odometry odom_;
-  geometry_msgs::Point migrationPoint_;
+  tf::Vector3 migrationPoint_;
   std::vector<uav_swarm_msgs::OdometryWithUavId> neighbors_;
 
   // Flight mode
@@ -96,12 +96,14 @@ private:
   void uavsOdomCb( const uav_swarm_msgs::OdometryWithUavIdConstPtr &msg );
   void publishUavOdom ();
   void publishVelocity( double velX, double velY );
+  void publishVectors( const tf::Vector3 &v1, const tf::Vector3 &v2, const tf::Vector3 &v3,
+                       const tf::Vector3 &v4, const tf::Vector3 &vRes );
 
   // Rules
-  geometry_msgs::Point rule1();
-  geometry_msgs::Point rule2();
-  geometry_msgs::Point rule3();
-  geometry_msgs::Point rule4();
+  void rule1( tf::Vector3& v );
+  void rule2( tf::Vector3& v );
+  void rule3( tf::Vector3& v );
+  void rule4( tf::Vector3& v );
 
 
   // Utility functions

@@ -21,12 +21,11 @@ SwarmControllerNode::SwarmControllerNode(ros::NodeHandle *nh)
     dx_ = 0.0;
     dy_ = 0.0;
     initialDeltasCalculated_ = false;
-    migrationPoint_.x = 0.0;
-    migrationPoint_.y = 0.0;
+    migrationPoint_.setValue( 0.0, 0.0, 0.0 );
     r1_ = 1.0;
     r2_ = 1.0;
-    r3_ = 1.0;
-    r4_ = 1.0;
+    r3_ = 0.0;
+    r4_ = 0.0;
     ros::param::get("swarm_controller_node/uav_id", id_);
 
     mavros_state_sub_ = nh->subscribe("mavros/state", 1, &SwarmControllerNode::mavrosStateCb, this);
@@ -34,7 +33,7 @@ SwarmControllerNode::SwarmControllerNode(ros::NodeHandle *nh)
     global_position_sub_ = nh->subscribe("mavros/global_position/global", 1, &SwarmControllerNode::globalPositionCb, this);
     odom_sub_ = nh->subscribe("mavros/local_position/odom", 1, &SwarmControllerNode::odomCb, this);
     enable_control_sub_ = nh->subscribe("/enable_control", 1, &SwarmControllerNode::enableControlCb, this);
-    uavs_odom_sub_ = nh->subscribe("/uavs_odom", 1, &SwarmControllerNode::uavsOdomCb, this);
+    uavs_odom_sub_ = nh->subscribe("/uavs_odom", 10, &SwarmControllerNode::uavsOdomCb, this);
     uav_odom_pub_ = nh->advertise<uav_swarm_msgs::OdometryWithUavId>("/uavs_odom", 10);
     cmd_vel_pub_ = nh->advertise<geometry_msgs::TwistStamped>("mavros/setpoint_velocity/cmd_vel", 10);
 
@@ -66,72 +65,33 @@ SwarmControllerNode::~SwarmControllerNode()
 
 void SwarmControllerNode::controlLoop()
 {
-    // Print information on screen
-    int chosenUav = 2;
-    if ( id_ == chosenUav )
-    {
-        char tab2[1024];
-        strncpy(tab2, mode_.c_str(), sizeof(tab2));
-        tab2[sizeof(tab2) - 1] = 0;
-        //ROS_INFO("UAV %d: \n Mode = %s | enableControl = %d \n Position = (%f, %f) | Objective = (%f , %f)",
-          //       id_, tab2, enableControl_, position_.x, position_.y, migrationPoint_.x, migrationPoint_.y);
-    }
-
     // Calculate each rule's influence
-    geometry_msgs::Point v1 = rule1();
-    geometry_msgs::Point v2 = rule2();
-    geometry_msgs::Point v3 = rule3();
-    geometry_msgs::Point v4 = rule4();
-    geometry_msgs::Point vRes;
-
-
-    if ( id_ == chosenUav )
-    {
-        //ROS_INFO("v1 = (%f, %f, %f)", v1.x, v1.y, v1.z);
-        //ROS_INFO("v2 = (%f, %f, %f)", v2.x, v2.y, v2.z);
-        //ROS_INFO("v3 = (%f, %f, %f)", v3.x, v3.y, v3.z);
-        //ROS_INFO("v4 = (%f, %f, %f)", v4.x, v4.y, v4.z);
-    }
-
+    tf::Vector3 v1, v2, v3, v4, vRes;
+    rule1(v1);
+    rule2(v2);
+    rule3(v3);
+    rule4(v4);
 
     // Combine the rules
-    vRes.x = v1.x + v2.x + v3.x + v4.x;
-    vRes.y = v1.y + v2.y + v3.y + v4.y;
-    vRes.z = v1.z + v2.z + v3.z + v4.z;
-
+    vRes.setX( v1.getX() + v2.getX() + v3.getX() + v4.getX() );
+    vRes.setY( v1.getY() + v2.getY() + v3.getY() + v4.getY() );
+    vRes.setZ( v1.getZ() + v2.getZ() + v3.getZ() + v4.getZ() );
 
     // Limit vRes
-    double norm = sqrt( pow( (vRes.x), 2 ) +
-                     pow( (vRes.y), 2 ) +
-                     pow( (vRes.z), 2 ) );
+    double norm = vRes.length();
     if ( norm >= MAXVEL )
     {
-        vRes.x *= (MAXVEL / norm);
-        vRes.y *= (MAXVEL / norm);
-        vRes.z *= (MAXVEL / norm);
+        vRes.normalize();
+        vRes *= MAXVEL;
     }
-
-
-    if ( id_ == 0 )
-    {
-        //ROS_INFO("vRes = (%f, %f, %f)", vRes.x, vRes.y, vRes.z);
-    }
-
 
     // Publish velocity for diagnostics purpose
-    v1_pub_.publish(v1);
-    v2_pub_.publish(v2);
-    v3_pub_.publish(v3);
-    v4_pub_.publish(v4);
-    vRes_pub_.publish(vRes);
-
-
-
+    publishVectors( v1, v2, v3, v4, vRes );
 
     // PUBLISH VELOCITY
     if ( enableControl_ == true )
     {
-        publishVelocity(vRes.x, vRes.y);
+        publishVelocity( vRes.getX(), vRes.getY() );
     }
 
     publishUavOdom();
@@ -188,6 +148,32 @@ void SwarmControllerNode::publishVelocity( double velX, double velY )
     cmd_vel_pub_.publish(msg);
 }
 
+void SwarmControllerNode::publishVectors( const tf::Vector3 &v1, const tf::Vector3 &v2, const tf::Vector3 &v3,
+                                          const tf::Vector3 &v4, const tf::Vector3 &vRes )
+{
+    geometry_msgs::Point v1Msg, v2Msg, v3Msg, v4Msg, vResMsg;
+    v1Msg.x = v1.getX();
+    v1Msg.y = v1.getY();
+    v1Msg.z = v1.getZ();
+    v2Msg.x = v2.getX();
+    v2Msg.y = v2.getY();
+    v2Msg.z = v2.getZ();
+    v3Msg.x = v3.getX();
+    v3Msg.y = v3.getY();
+    v3Msg.z = v3.getZ();
+    v4Msg.x = v4.getX();
+    v4Msg.y = v4.getY();
+    v4Msg.z = v4.getZ();
+    vResMsg.x = vRes.getX();
+    vResMsg.y = vRes.getY();
+    vResMsg.z = vRes.getZ();
+    v1_pub_.publish( v1Msg );
+    v2_pub_.publish( v2Msg );
+    v3_pub_.publish( v3Msg );
+    v4_pub_.publish( v4Msg );
+    vRes_pub_.publish( vResMsg );
+}
+
 void SwarmControllerNode::mavrosStateCb(const mavros_msgs::StateConstPtr &msg)
 {
     if(msg->mode == std::string("CMODE(0)"))
@@ -200,8 +186,9 @@ void SwarmControllerNode::mavrosStateCb(const mavros_msgs::StateConstPtr &msg)
 
 void SwarmControllerNode::migrationPointCb( const geometry_msgs::PointConstPtr &msg )
 {
-    migrationPoint_.x = msg->x;
-    migrationPoint_.y = msg->y;
+    migrationPoint_.setX( msg->x );
+    migrationPoint_.setX( msg->y );
+    migrationPoint_.setZ( msg->z );
 }
 
 void SwarmControllerNode::globalPositionCb( const sensor_msgs::NavSatFix &msg )
@@ -265,29 +252,17 @@ void SwarmControllerNode::enableControlCb( const std_msgs::BoolConstPtr &msg )
 
 void SwarmControllerNode::uavsOdomCb( const uav_swarm_msgs::OdometryWithUavIdConstPtr &msg )
 {   
-    ROS_INFO( "UAV %d reporting. Received new msg:\n[\n\tid: %d,\n\tx: %f,\n\ty: %f,\n\tz: %f,\n\tvx: %f,\n\tvy: %f,\n\tvz: %f\n]",
-             id_,
-             msg->id,
-             msg->odom.pose.pose.position.x,
-             msg->odom.pose.pose.position.y,
-             msg->odom.pose.pose.position.z,
-             msg->odom.twist.twist.linear.x,
-             msg->odom.twist.twist.linear.y,
-             msg->odom.twist.twist.linear.z );
     // Only consider messages that came from neighbors
     if ( msg->id != id_ )
     {
-        ROS_INFO( "UAV %d reporting. Entering if. Number of neighbors is %d.", id_, neighbors_.size() );
         bool isNew = true;
 
         // Loop through the neighbors array
         for ( int i = 0; i < neighbors_.size(); i++ )
         {
-            ROS_INFO( "UAV %d reporting. Entering neighbor %d. Id is %d.", id_, i, neighbors_[i].id );
             // Update existing neighbors...
             if ( msg->id == neighbors_[i].id )
             {
-                ROS_INFO( "UAV %d reporting. Neighbor already exists. Updating.", id_ );
                 neighbors_[i].odom.pose.pose.position.x = msg->odom.pose.pose.position.x;
                 neighbors_[i].odom.pose.pose.position.y = msg->odom.pose.pose.position.y;
                 neighbors_[i].odom.pose.pose.position.z = msg->odom.pose.pose.position.z;
@@ -307,7 +282,6 @@ void SwarmControllerNode::uavsOdomCb( const uav_swarm_msgs::OdometryWithUavIdCon
         // ...or add new neighbors
         if ( isNew == true )
         {
-            ROS_INFO( "UAV %d reporting. Neighbor is new. Adding.", id_ );
             uav_swarm_msgs::OdometryWithUavId odomWithUavId;
             odomWithUavId.id = msg->id;
             odomWithUavId.odom.pose.pose.position.x = msg->odom.pose.pose.position.x;
@@ -323,86 +297,51 @@ void SwarmControllerNode::uavsOdomCb( const uav_swarm_msgs::OdometryWithUavIdCon
             neighbors_.push_back(odomWithUavId);
         }
     }
-
-    ROS_INFO( "UAV %d reporting. New array:", id_ );
-    int n = neighbors_.size();
-    if ( n > 0 )
-    {
-        ROS_INFO("UAV %d neighbors:", id_);
-        for ( int i(0); i < n; i++ )
-        {
-            if ( neighbors_[i].id != id_ )
-            {
-                ROS_INFO("[\n\tid: %d,\n\tx: %f,\n\ty: %f,\n\tz: %f,\n\tvx: %f,\n\tvy: %f,\n\tvz: %f\n]",
-                         neighbors_[i].id,
-                         neighbors_[i].odom.pose.pose.position.x,
-                         neighbors_[i].odom.pose.pose.position.y,
-                         neighbors_[i].odom.pose.pose.position.z,
-                         neighbors_[i].odom.twist.twist.linear.x,
-                         neighbors_[i].odom.twist.twist.linear.y,
-                         neighbors_[i].odom.twist.twist.linear.z );
-            }
-        }
-    }
 }
 
 
 // REYNOLDS RULES
 
 // Rule 1: Flocking
-geometry_msgs::Point SwarmControllerNode::rule1()
+void SwarmControllerNode::rule1( tf::Vector3& v )
 {
-    geometry_msgs::Point v1;
-
-    v1.x = 0.0;
-    v1.y = 0.0;
-    v1.z = 0.0;
+    v.setValue( 0.0, 0.0, 0.0 );
 
     int n = neighbors_.size();
 
     if ( n > 0 )
     {
-        geometry_msgs::Point centerOfMass;
-
-        centerOfMass.x = 0.0;
-        centerOfMass.y = 0.0;
-        centerOfMass.z = 0.0;
-
         for ( int i(0); i < n; i++ )
         {
             if ( neighbors_[i].id != id_ )
             {
-                centerOfMass.x += neighbors_[i].odom.pose.pose.position.x;
-                centerOfMass.y += neighbors_[i].odom.pose.pose.position.y;
-                centerOfMass.z += neighbors_[i].odom.pose.pose.position.z;
+                tf::Vector3 neighborPosition(
+                    neighbors_[i].odom.pose.pose.position.x,
+                    neighbors_[i].odom.pose.pose.position.y,
+                    neighbors_[i].odom.pose.pose.position.z
+                );
+                v += neighborPosition;
             }
         }
 
-        centerOfMass.x *= ( 1 / n );
-        centerOfMass.y *= ( 1 / n );
-        centerOfMass.z *= ( 1 / n );
+        v /= n;
 
-        v1.x = centerOfMass.x - odom_.pose.pose.position.x;
-        v1.y = centerOfMass.y - odom_.pose.pose.position.y;
-        v1.z = centerOfMass.z - odom_.pose.pose.position.z;
+        tf::Vector3 thisPosition(
+            odom_.pose.pose.position.x,
+            odom_.pose.pose.position.y,
+            odom_.pose.pose.position.z
+        );
+        v -= thisPosition;
     }
 
-    v1.x *= r1_;
-    v1.y *= r1_;
-    v1.z *= r1_;
-
-    return v1;
+    v *= r1_;
 }
 
 
 // Rule 2: Collision Avoidance
-geometry_msgs::Point SwarmControllerNode::rule2()
+void SwarmControllerNode::rule2( tf::Vector3& v )
 {
-    geometry_msgs::Point v2;
-
-    v2.x = 0.0;
-    v2.y = 0.0;
-    v2.z = 0.0;
+    v.setValue( 0.0, 0.0, 0.0 );
 
     int n = neighbors_.size();
 
@@ -412,55 +351,41 @@ geometry_msgs::Point SwarmControllerNode::rule2()
         {
             if ( neighbors_[i].id != id_ )
             {
-                double d = sqrt( pow( (neighbors_[i].odom.pose.pose.position.x - odom_.pose.pose.position.x), 2 ) +
-                                 pow( (neighbors_[i].odom.pose.pose.position.y - odom_.pose.pose.position.y), 2 ) +
-                                 pow( (neighbors_[i].odom.pose.pose.position.z - odom_.pose.pose.position.z), 2 ) );
+                tf::Vector3 thisPosition(
+                    odom_.pose.pose.position.x,
+                    odom_.pose.pose.position.y,
+                    odom_.pose.pose.position.z
+                );
+                tf::Vector3 neighborPosition(
+                    neighbors_[i].odom.pose.pose.position.x,
+                    neighbors_[i].odom.pose.pose.position.y,
+                    neighbors_[i].odom.pose.pose.position.z
+                );
+
+                double d = thisPosition.distance( neighborPosition );
 
                 if ( d < VISION_DISTANCE )
                 {
+                    if ( d < 0.01 ) d = 0.1;
                     double dif = VISION_DISTANCE - d;
 
-                    geometry_msgs::Point v;
+                    thisPosition -= neighborPosition;
+                    thisPosition /= d;
+                    thisPosition *= dif;
 
-                    v.x = neighbors_[i].odom.pose.pose.position.x - odom_.pose.pose.position.x;
-                    v.y = neighbors_[i].odom.pose.pose.position.y - odom_.pose.pose.position.y;
-                    v.z = neighbors_[i].odom.pose.pose.position.z - odom_.pose.pose.position.z;
-
-                    double vm = sqrt( pow( (v.x), 2 ) + pow( (v.y), 2 ) + pow( (v.z), 2 ) );
-
-                    if ( vm < 0.01 ) vm = 0.1;
-
-                    v.x /= vm;
-                    v.y /= vm;
-                    v.z /= vm;
-
-                    v.x *= dif;
-                    v.y *= dif;
-                    v.z *= dif;
-
-                    v2.x -= v.x;
-                    v2.y -= v.y;
-                    v2.z -= v.z;
+                    v += thisPosition;
                 }
             }
         }
     }
 
-    v2.x *= r2_;
-    v2.y *= r2_;
-    v2.z *= r2_;
-
-    return v2;
+    v *= r2_;
 }
 
 // Rule 3: Velocity Matching
-geometry_msgs::Point SwarmControllerNode::rule3()
+void SwarmControllerNode::rule3( tf::Vector3& v )
 {
-    geometry_msgs::Point v3;
-
-    v3.x = 0.0;
-    v3.y = 0.0;
-    v3.z = 0.0;
+    v.setValue( 0.0, 0.0, 0.0 );
 
     int n = neighbors_.size();
 
@@ -470,47 +395,40 @@ geometry_msgs::Point SwarmControllerNode::rule3()
         {
             if ( neighbors_[i].id != id_ )
             {
-                v3.x += neighbors_[i].odom.twist.twist.linear.x;
-                v3.y += neighbors_[i].odom.twist.twist.linear.y;
-                v3.z += neighbors_[i].odom.twist.twist.linear.z;
+                tf::Vector3 neighborVelocity(
+                    neighbors_[i].odom.twist.twist.linear.x,
+                    neighbors_[i].odom.twist.twist.linear.y,
+                    neighbors_[i].odom.twist.twist.linear.z
+                );
+                v += neighborVelocity;
             }
         }
 
-        v3.x *= ( 1 / n );
-        v3.y *= ( 1 / n );
-        v3.z *= ( 1 / n );
+        v /= n;
 
-        v3.x = v3.x - odom_.twist.twist.linear.x;
-        v3.y = v3.y - odom_.twist.twist.linear.y;
-        v3.z = v3.z - odom_.twist.twist.linear.z;
+        /*
+        tf::Vector3 thisVelocity(
+            odom_.twist.twist.linear.x,
+            odom_.twist.twist.linear.y,
+            odom_.twist.twist.linear.z
+        );
+        v -= thisVelocity;*/
     }
 
-    v3.x *= r3_;
-    v3.y *= r3_;
-    v3.z *= r3_;
-
-    return v3;
+    v *= r3_;
 }
 
 
 // Rule 4: Migration
-geometry_msgs::Point SwarmControllerNode::rule4()
+void SwarmControllerNode::rule4( tf::Vector3& v )
 {
-    geometry_msgs::Point v4;
+    v.setValue( 0.0, 0.0, 0.0 );
 
-    v4.x = 0.0;
-    v4.y = 0.0;
-    v4.z = 0.0;
+    v.setX( migrationPoint_.getX() - odom_.pose.pose.position.x );
+    v.setY( migrationPoint_.getY() - odom_.pose.pose.position.y );
+    v.setZ( migrationPoint_.getZ() - odom_.pose.pose.position.z );
 
-    v4.x = migrationPoint_.x - odom_.pose.pose.position.x;
-    v4.y = migrationPoint_.y - odom_.pose.pose.position.y;
-    v4.z = migrationPoint_.z - odom_.pose.pose.position.z;
-
-    v4.x *= r4_;
-    v4.y *= r4_;
-    v4.z *= r4_;
-
-    return v4;
+    v *= r4_;
 }
 
 
