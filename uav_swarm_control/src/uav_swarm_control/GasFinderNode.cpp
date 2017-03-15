@@ -1,39 +1,31 @@
-/**
- *  This source file implements the SwarmControllerNode class, which is also a
- *  Node class via enhancement.
- *
- *  Version: 1.0.0
- *  Created on: 30/10/2016
- *  Modified on: 30/10/2016
- *  Author: Rafael Gomes Braga (faerugb@gmail.com)
- *  Maintainer: Rafael Gomes Braga (faerugb@gmail.com)
- */
-
-#include "uav_swarm_control/SwarmControllerNode.h"
+#include "uav_swarm_control/GasFinderNode.h"
 
 namespace uav_swarm_control
 {
 
-SwarmControllerNode::SwarmControllerNode(ros::NodeHandle *nh)
+GasFinderNode::GasFinderNode(ros::NodeHandle *nh)
   : Node(nh, 10)
 {
     enableControl_ = false;
     dx_ = 0.0;
     dy_ = 0.0;
     initialDeltasCalculated_ = false;
-    migrationPoint_.setValue( 0.0, 0.0, 0.0 );
-    r1_ = 0.2;
-    r2_ = 0.5;
-    r3_ = 0.0;
-    r4_ = 0.2;
-    ros::param::get("swarm_controller_node/uav_id", id_);
+    gasSource_.setValue( 0.0, 0.0, 0.0 );
+    lBest_.setValue( 0.0, 0.0, 0.0 );
+    bestFitness_ = 0.0;
+    r1_ = 1.0;
+    r2_ = 1.0;
+    r3_ = 1.0;
+    r4_ = 1.0;
+    ros::param::get("gas_finder_node/uav_id", id_);
+    srand ((unsigned)time(NULL));
 
-    mavros_state_sub_ = nh->subscribe("mavros/state", 1, &SwarmControllerNode::mavrosStateCb, this);
-    migration_point_sub_ = nh->subscribe("/migration_point", 1, &SwarmControllerNode::migrationPointCb, this);
-    global_position_sub_ = nh->subscribe("mavros/global_position/global", 1, &SwarmControllerNode::globalPositionCb, this);
-    odom_sub_ = nh->subscribe("mavros/local_position/odom", 1, &SwarmControllerNode::odomCb, this);
-    enable_control_sub_ = nh->subscribe("/enable_control", 1, &SwarmControllerNode::enableControlCb, this);
-    uavs_odom_sub_ = nh->subscribe("/uavs_odom", 10, &SwarmControllerNode::uavsOdomCb, this);
+    mavros_state_sub_ = nh->subscribe("mavros/state", 1, &GasFinderNode::mavrosStateCb, this);
+    migration_point_sub_ = nh->subscribe("/migration_point", 1, &GasFinderNode::migrationPointCb, this);
+    global_position_sub_ = nh->subscribe("mavros/global_position/global", 1, &GasFinderNode::globalPositionCb, this);
+    odom_sub_ = nh->subscribe("mavros/local_position/odom", 1, &GasFinderNode::odomCb, this);
+    enable_control_sub_ = nh->subscribe("/enable_control", 1, &GasFinderNode::enableControlCb, this);
+    uavs_odom_sub_ = nh->subscribe("/uavs_odom", 10, &GasFinderNode::uavsOdomCb, this);
     uav_odom_pub_ = nh->advertise<uav_swarm_msgs::OdometryWithUavId>("/uavs_odom", 10);
     cmd_vel_pub_ = nh->advertise<geometry_msgs::TwistStamped>("mavros/setpoint_velocity/cmd_vel", 10);
 
@@ -45,7 +37,7 @@ SwarmControllerNode::SwarmControllerNode(ros::NodeHandle *nh)
     vRes_pub_ = nh->advertise<geometry_msgs::Point>("vRes", 10);
 }
 
-SwarmControllerNode::~SwarmControllerNode()
+GasFinderNode::~GasFinderNode()
 {
     mavros_state_sub_.shutdown();
     migration_point_sub_.shutdown();
@@ -63,7 +55,7 @@ SwarmControllerNode::~SwarmControllerNode()
     vRes_pub_.shutdown();
 }
 
-void SwarmControllerNode::controlLoop()
+void GasFinderNode::controlLoop()
 {
     // Calculate each rule's influence
     tf::Vector3 v1, v2, v3, v4, vRes;
@@ -119,7 +111,7 @@ void SwarmControllerNode::controlLoop()
     }*/
 }
 
-void SwarmControllerNode::publishUavOdom()
+void GasFinderNode::publishUavOdom()
 {
     uav_swarm_msgs::OdometryWithUavId msg;
 
@@ -138,7 +130,7 @@ void SwarmControllerNode::publishUavOdom()
     uav_odom_pub_.publish(msg);
 }
 
-void SwarmControllerNode::publishVelocity( double velX, double velY )
+void GasFinderNode::publishVelocity( double velX, double velY )
 {
     geometry_msgs::TwistStamped msg;
 
@@ -148,7 +140,7 @@ void SwarmControllerNode::publishVelocity( double velX, double velY )
     cmd_vel_pub_.publish(msg);
 }
 
-void SwarmControllerNode::publishVectors( const tf::Vector3 &v1, const tf::Vector3 &v2, const tf::Vector3 &v3,
+void GasFinderNode::publishVectors( const tf::Vector3 &v1, const tf::Vector3 &v2, const tf::Vector3 &v3,
                                           const tf::Vector3 &v4, const tf::Vector3 &vRes )
 {
     geometry_msgs::Point v1Msg, v2Msg, v3Msg, v4Msg, vResMsg;
@@ -174,7 +166,7 @@ void SwarmControllerNode::publishVectors( const tf::Vector3 &v1, const tf::Vecto
     vRes_pub_.publish( vResMsg );
 }
 
-void SwarmControllerNode::mavrosStateCb(const mavros_msgs::StateConstPtr &msg)
+void GasFinderNode::mavrosStateCb(const mavros_msgs::StateConstPtr &msg)
 {
     if(msg->mode == std::string("CMODE(0)"))
         return;
@@ -184,21 +176,21 @@ void SwarmControllerNode::mavrosStateCb(const mavros_msgs::StateConstPtr &msg)
     armed_ = msg->armed==128;
 }
 
-void SwarmControllerNode::migrationPointCb( const geometry_msgs::PointConstPtr &msg )
+void GasFinderNode::migrationPointCb( const geometry_msgs::PointConstPtr &msg )
 {
-    migrationPoint_.setX( msg->x );
-    migrationPoint_.setX( msg->y );
-    migrationPoint_.setZ( msg->z );
+    gasSource_.setX( msg->x );
+    gasSource_.setX( msg->y );
+    gasSource_.setZ( msg->z );
 }
 
-void SwarmControllerNode::globalPositionCb( const sensor_msgs::NavSatFix &msg )
+void GasFinderNode::globalPositionCb( const sensor_msgs::NavSatFix &msg )
 {
     // Quando a primeira mensagem de GPS chegar, calcular dx_ e dy_
     if ( !initialDeltasCalculated_ )
     {
         double originLat, originLon;
-        ros::param::get("swarm_controller_node/origin_lat", originLat);
-        ros::param::get("swarm_controller_node/origin_lon", originLon);
+        ros::param::get("gas_finder_node/origin_lat", originLat);
+        ros::param::get("gas_finder_node/origin_lon", originLon);
         double lat = msg.latitude;
         double lon = msg.longitude;
         dx_ = haversines( originLat, originLon, originLat, lon );
@@ -209,7 +201,7 @@ void SwarmControllerNode::globalPositionCb( const sensor_msgs::NavSatFix &msg )
     }
 }
 
-void SwarmControllerNode::odomCb( const nav_msgs::OdometryConstPtr &msg )
+void GasFinderNode::odomCb( const nav_msgs::OdometryConstPtr &msg )
 {
     // Get UAV odometry from the received message
     odom_.pose.pose.position.x = msg->pose.pose.position.x + dx_;
@@ -245,13 +237,13 @@ void SwarmControllerNode::odomCb( const nav_msgs::OdometryConstPtr &msg )
     );
 }
 
-void SwarmControllerNode::enableControlCb( const std_msgs::BoolConstPtr &msg )
+void GasFinderNode::enableControlCb( const std_msgs::BoolConstPtr &msg )
 {
     enableControl_ = msg->data;
 }
 
-void SwarmControllerNode::uavsOdomCb( const uav_swarm_msgs::OdometryWithUavIdConstPtr &msg )
-{   
+void GasFinderNode::uavsOdomCb( const uav_swarm_msgs::OdometryWithUavIdConstPtr &msg )
+{
     // Only consider messages that came from neighbors
     if ( msg->id != id_ )
     {
@@ -303,7 +295,7 @@ void SwarmControllerNode::uavsOdomCb( const uav_swarm_msgs::OdometryWithUavIdCon
 // REYNOLDS RULES
 
 // Rule 1: Flocking
-void SwarmControllerNode::rule1( tf::Vector3& v )
+void GasFinderNode::rule1( tf::Vector3& v )
 {
     v.setValue( 0.0, 0.0, 0.0 );
 
@@ -339,7 +331,7 @@ void SwarmControllerNode::rule1( tf::Vector3& v )
 
 
 // Rule 2: Collision Avoidance
-void SwarmControllerNode::rule2( tf::Vector3& v )
+void GasFinderNode::rule2( tf::Vector3& v )
 {
     v.setValue( 0.0, 0.0, 0.0 );
 
@@ -383,7 +375,7 @@ void SwarmControllerNode::rule2( tf::Vector3& v )
 }
 
 // Rule 3: Velocity Matching
-void SwarmControllerNode::rule3( tf::Vector3& v )
+void GasFinderNode::rule3( tf::Vector3& v )
 {
     v.setValue( 0.0, 0.0, 0.0 );
 
@@ -419,21 +411,70 @@ void SwarmControllerNode::rule3( tf::Vector3& v )
 }
 
 
-// Rule 4: Migration
-void SwarmControllerNode::rule4( tf::Vector3& v )
+// Rule 4: Search for gas
+void GasFinderNode::rule4( tf::Vector3& v )
 {
+    int c1 = 2, c2 = 1;
+
     v.setValue( 0.0, 0.0, 0.0 );
 
-    v.setX( migrationPoint_.getX() - odom_.pose.pose.position.x );
-    v.setY( migrationPoint_.getY() - odom_.pose.pose.position.y );
-    v.setZ( migrationPoint_.getZ() - odom_.pose.pose.position.z );
+    // Set lBest as the current position in the first time
+    if ( lBest_.getX() == 0.0 && lBest_.getY() == 0.0 && lBest_.getZ() == 0.0 )
+    {
+        lBest_.setX( odom_.pose.pose.position.x );
+        lBest_.setY( odom_.pose.pose.position.y );
+        lBest_.setZ( odom_.pose.pose.position.z );
+    }
+
+    // Get current gas concentration
+    double currentFitness = gasConcentration();
+
+    if ( id_ == 0 ) ROS_INFO("\nCurrent fitness = %f | Best fitness = %f", currentFitness, bestFitness_);
+
+    // If the current value is better than the saved one, update the saved one
+    if ( currentFitness > bestFitness_ )
+    {
+        bestFitness_ = currentFitness;
+        lBest_.setX( odom_.pose.pose.position.x );
+        lBest_.setY( odom_.pose.pose.position.y );
+        lBest_.setZ( odom_.pose.pose.position.z );
+    }
+
+    v.setX( lBest_.getX() - odom_.pose.pose.position.x );
+    v.setY( lBest_.getY() - odom_.pose.pose.position.y );
+    v.setZ( lBest_.getZ() - odom_.pose.pose.position.z );
+
+    v.setX( c1 * v.getX() + c2 * ((double)rand()/(double)RAND_MAX) );
+    v.setY( c1 * v.getY() + c2 * ((double)rand()/(double)RAND_MAX) );
+    v.setZ( c1 * v.getZ() + c2 * ((double)rand()/(double)RAND_MAX) );
+
 
     v *= r4_;
 }
 
 
+
+// Return the concentration of gas in the current UAV position
+double GasFinderNode::gasConcentration()
+{
+    if ( initialDeltasCalculated_ )
+    {
+      tf::Vector3 v;
+
+      v.setX( gasSource_.getX() - odom_.pose.pose.position.x );
+      v.setY( gasSource_.getY() - odom_.pose.pose.position.y );
+      v.setZ( gasSource_.getZ() - odom_.pose.pose.position.z );
+
+      return 10.0 / v.length();
+    }
+    else
+      return 0.0;
+}
+
+
+
 // Returns the distance in meters between 2 points given their GPS coordinates
-double SwarmControllerNode::haversines( double lat1, double lon1, double lat2, double lon2 )
+double GasFinderNode::haversines( double lat1, double lon1, double lat2, double lon2 )
 {
     double a, c, d, dLat, dLon;
     int r = 6371000; // raio médio da Terra em metros

@@ -27,12 +27,14 @@ set(H_FILES
     include/Node.h
     include/uav_swarm_control/SwarmControllerNode.h
     include/uav_swarm_control/MarkerPublisher.h
+    include/uav_swarm_control/GasFinderNode.h
 )
 
 set(CPP_FILES
     src/Node.cpp
     src/uav_swarm_control/SwarmControllerNode.cpp
     src/uav_swarm_control/MarkerPublisher.cpp
+    src/uav_swarm_control/GasFinderNode.cpp
 )
 
 add_executable(swarm_controller_node src/swarm_controller_node.cpp ${CPP_FILES})
@@ -42,3 +44,7 @@ target_link_libraries(swarm_controller_node ${catkin_LIBRARIES})
 add_executable(marker_publisher src/marker_publisher.cpp ${CPP_FILES})
 add_dependencies(marker_publisher ${catkin_EXPORTED_TARGETS})
 target_link_libraries(marker_publisher ${catkin_LIBRARIES})
+
+add_executable(gas_finder_node src/gas_finder_node.cpp ${CPP_FILES})
+add_dependencies(gas_finder_node ${catkin_EXPORTED_TARGETS})
+target_link_libraries(gas_finder_node ${catkin_LIBRARIES})

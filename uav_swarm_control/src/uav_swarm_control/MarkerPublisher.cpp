@@ -21,7 +21,10 @@ MarkerPublisher::MarkerPublisher(ros::NodeHandle *nh)
     // TODO: Handle the case where the parameter doesn't exist
     if ( !ros::param::get("swarm_controller_node/uav_id", id_) )
     {
+      if  ( !ros::param::get("gas_finder_node/uav_id", id_) )
+      {
         id_ = 0;
+      }
     }
 
     v1_sub_ = nh->subscribe("v1", 1, &MarkerPublisher::v1Cb, this);
