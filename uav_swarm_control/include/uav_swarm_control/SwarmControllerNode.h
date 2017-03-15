@@ -29,7 +29,7 @@
 
 #define MAXVEL   1.0
 
-#define VISION_DISTANCE 10.0
+#define VISION_DISTANCE 20.0
 
 namespace uav_swarm_control
 {

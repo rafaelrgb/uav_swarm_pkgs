@@ -78,6 +78,6 @@
     </group>
 
     <!-- Run RVIZ-->
-    <node name="$(anon rviz)" pkg="rviz" type="rviz" args="$(find uav_swarm_control)/uav_swarm_control.rviz" />
+    <node name="$(anon rviz)" pkg="rviz" type="rviz" args="-d $(find uav_swarm_control)/uav_swarm_control.rviz" />
 
 </launch>

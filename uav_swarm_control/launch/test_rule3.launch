@@ -43,12 +43,6 @@
                     <rosparam command="load" file="$(arg config_yaml)" />
             </node>
 
-            <node pkg="uav_swarm_control" type="swarm_controller_node" name="swarm_controller_node" output="screen" >
-                <param name="uav_id" value="1" />
-                <param name="origin_lat" value="$(arg origin_lat)" />
-                <param name="origin_lon" value="$(arg origin_lon)" />
-            </node>
-
             <node pkg="uav_swarm_control" type="marker_publisher" name="marker_publisher" >
                 <param name="uav_id" value="1" />
             </node>

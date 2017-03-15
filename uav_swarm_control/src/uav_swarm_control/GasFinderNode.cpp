@@ -13,9 +13,9 @@ GasFinderNode::GasFinderNode(ros::NodeHandle *nh)
     gasSource_.setValue( 0.0, 0.0, 0.0 );
     lBest_.setValue( 0.0, 0.0, 0.0 );
     bestFitness_ = 0.0;
-    r1_ = 1.0;
-    r2_ = 1.0;
-    r3_ = 1.0;
+    r1_ = 0.1;
+    r2_ = 0.1;
+    r3_ = 0.0;
     r4_ = 1.0;
     ros::param::get("gas_finder_node/uav_id", id_);
     srand ((unsigned)time(NULL));
@@ -65,9 +65,9 @@ void GasFinderNode::controlLoop()
     rule4(v4);
 
     // Combine the rules
-    vRes.setX( v1.getX() + v2.getX() + v3.getX() + v4.getX() );
-    vRes.setY( v1.getY() + v2.getY() + v3.getY() + v4.getY() );
-    vRes.setZ( v1.getZ() + v2.getZ() + v3.getZ() + v4.getZ() );
+    vRes.setX( r1_ * v1.getX() + r2_ * v2.getX() + r3_ * v3.getX() + r4_ * v4.getX() );
+    vRes.setY( r1_ * v1.getY() + r2_ * v2.getY() + r3_ * v3.getY() + r4_ * v4.getY() );
+    vRes.setZ( r1_ * v1.getZ() + r2_ * v2.getZ() + r3_ * v3.getZ() + r4_ * v4.getZ() );
 
     // Limit vRes
     double norm = vRes.length();
@@ -325,8 +325,6 @@ void GasFinderNode::rule1( tf::Vector3& v )
         );
         v -= thisPosition;
     }
-
-    v *= r1_;
 }
 
 
@@ -370,8 +368,6 @@ void GasFinderNode::rule2( tf::Vector3& v )
             }
         }
     }
-
-    v *= r2_;
 }
 
 // Rule 3: Velocity Matching
@@ -406,15 +402,13 @@ void GasFinderNode::rule3( tf::Vector3& v )
         );
         v -= thisVelocity;*/
     }
-
-    v *= r3_;
 }
 
 
 // Rule 4: Search for gas
 void GasFinderNode::rule4( tf::Vector3& v )
 {
-    int c1 = 2, c2 = 1;
+    int c1 = 1, c2 = 0;
 
     v.setValue( 0.0, 0.0, 0.0 );
 
@@ -447,9 +441,6 @@ void GasFinderNode::rule4( tf::Vector3& v )
     v.setX( c1 * v.getX() + c2 * ((double)rand()/(double)RAND_MAX) );
     v.setY( c1 * v.getY() + c2 * ((double)rand()/(double)RAND_MAX) );
     v.setZ( c1 * v.getZ() + c2 * ((double)rand()/(double)RAND_MAX) );
-
-
-    v *= r4_;
 }
 
 
