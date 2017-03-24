@@ -20,14 +20,10 @@
                     <rosparam command="load" file="$(arg config_yaml)" />
             </node>
 
-            <node pkg="uav_swarm_control" type="gas_finder_node" name="gas_finder_node" output="screen" >
+            <node pkg="uav_swarm_control" type="gas_finder_node" name="gas_follower_node" output="screen" >
                 <param name="uav_id" value="0" />
                 <param name="origin_lat" value="$(arg origin_lat)" />
                 <param name="origin_lon" value="$(arg origin_lon)" />
-            </node>
-
-            <node pkg="uav_swarm_control" type="marker_publisher" name="marker_publisher" >
-                <param name="uav_id" value="0" />
             </node>
     </group>
 
@@ -43,14 +39,10 @@
                     <rosparam command="load" file="$(arg config_yaml)" />
             </node>
 
-            <node pkg="uav_swarm_control" type="gas_finder_node" name="gas_finder_node" output="screen" >
+            <node pkg="uav_swarm_control" type="gas_finder_node" name="gas_follower_node" output="screen" >
                 <param name="uav_id" value="1" />
                 <param name="origin_lat" value="$(arg origin_lat)" />
                 <param name="origin_lon" value="$(arg origin_lon)" />
-            </node>
-
-            <node pkg="uav_swarm_control" type="marker_publisher" name="marker_publisher" >
-                <param name="uav_id" value="1" />
             </node>
     </group>
 
@@ -66,21 +58,14 @@
                     <rosparam command="load" file="$(arg config_yaml)" />
             </node>
 
-            <node pkg="uav_swarm_control" type="gas_finder_node" name="gas_finder_node" output="screen" >
+            <node pkg="uav_swarm_control" type="gas_finder_node" name="gas_follower_node" output="screen" >
                 <param name="uav_id" value="2" />
                 <param name="origin_lat" value="$(arg origin_lat)" />
                 <param name="origin_lon" value="$(arg origin_lon)" />
-            </node>
-
-            <node pkg="uav_swarm_control" type="marker_publisher" name="marker_publisher" >
-                <param name="uav_id" value="1" />
             </node>
     </group>
 
     <!-- Run RVIZ-->
     <node name="$(anon rviz)" pkg="rviz" type="rviz" args="-d $(find uav_swarm_control)/uav_swarm_control.rviz" />
-
-    <!-- Publish UAVs pose to evaluate -->
-    <node name="pose_publisher" pkg="uav_swarm_control" type="pose_publisher" />
 
 </launch>

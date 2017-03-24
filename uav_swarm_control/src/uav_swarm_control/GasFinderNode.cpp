@@ -10,7 +10,7 @@ GasFinderNode::GasFinderNode(ros::NodeHandle *nh)
     dx_ = 0.0;
     dy_ = 0.0;
     initialDeltasCalculated_ = false;
-    gasSource_.setValue( 0.0, 0.0, 0.0 );
+    gasSource_.setValue( 20.0, 35.0, 2.0 );
     lBest_.setValue( 0.0, 0.0, 0.0 );
     bestFitness_ = 0.0;
     r1_ = 0.1;
@@ -408,7 +408,7 @@ void GasFinderNode::rule3( tf::Vector3& v )
 // Rule 4: Search for gas
 void GasFinderNode::rule4( tf::Vector3& v )
 {
-    int c1 = 1, c2 = 0;
+    int c1 = 1, c2 = 1;
 
     v.setValue( 0.0, 0.0, 0.0 );
 

@@ -22,16 +22,10 @@ SwarmControllerNode::SwarmControllerNode(ros::NodeHandle *nh)
     dy_ = 0.0;
     initialDeltasCalculated_ = false;
     migrationPoint_.setValue( 0.0, 0.0, 0.0 );
-    /*
     r1_ = 0.1;
     r2_ = 0.1;
     r3_ = 0.0;
     r4_ = 1.0;
-    */
-    r1_ = 0.0;
-    r2_ = 0.0;
-    r3_ = 1.0;
-    r4_ = 0.0;
     ros::param::get("swarm_controller_node/uav_id", id_);
 
     mavros_state_sub_ = nh->subscribe("mavros/state", 1, &SwarmControllerNode::mavrosStateCb, this);

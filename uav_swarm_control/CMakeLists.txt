@@ -48,3 +48,7 @@ target_link_libraries(marker_publisher ${catkin_LIBRARIES})
 add_executable(gas_finder_node src/gas_finder_node.cpp ${CPP_FILES})
 add_dependencies(gas_finder_node ${catkin_EXPORTED_TARGETS})
 target_link_libraries(gas_finder_node ${catkin_LIBRARIES})
+
+add_executable(pose_publisher src/pose_publisher.cpp ${CPP_FILES})
+add_dependencies(pose_publisher ${catkin_EXPORTED_TARGETS})
+target_link_libraries(pose_publisher ${catkin_LIBRARIES})
