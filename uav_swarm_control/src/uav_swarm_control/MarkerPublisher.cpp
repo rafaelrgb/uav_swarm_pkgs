@@ -19,7 +19,7 @@ MarkerPublisher::MarkerPublisher(ros::NodeHandle *nh)
 {
     // Try to get UAV ID from the parameter server
     // TODO: Handle the case where the parameter doesn't exist
-    if ( !ros::param::get("swarm_controller_node/uav_id", id_) )
+    if ( !ros::param::get("uav_id", id_) )
     {
       if  ( !ros::param::get("gas_finder_node/uav_id", id_) )
       {

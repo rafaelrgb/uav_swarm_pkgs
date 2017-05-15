@@ -1,20 +1,20 @@
 /**
- *  This source file implements the SwarmControllerNode class, which is also a
+ *  This source file implements the FormationControllerNode class, which is also a
  *  Node class via enhancement.
  *
  *  Version: 1.0.0
- *  Created on: 30/10/2016
- *  Modified on: 30/10/2016
+ *  Created on: 26/04/2017
+ *  Modified on: 26/04/2017
  *  Author: Rafael Gomes Braga (faerugb@gmail.com)
  *  Maintainer: Rafael Gomes Braga (faerugb@gmail.com)
  */
 
-#include "uav_swarm_control/SwarmControllerNode.h"
+#include "uav_swarm_control/FormationControllerNode.h"
 
 namespace uav_swarm_control
 {
 
-SwarmControllerNode::SwarmControllerNode(ros::NodeHandle *nh)
+FormationControllerNode::FormationControllerNode(ros::NodeHandle *nh)
   : Node(nh, 10)
 {
     enableControl_ = false;
@@ -22,18 +22,28 @@ SwarmControllerNode::SwarmControllerNode(ros::NodeHandle *nh)
     dy_ = 0.0;
     initialDeltasCalculated_ = false;
     migrationPoint_.setValue( 0.0, 0.0, 0.0 );
-    r1_ = 0.1;
-    r2_ = 0.1;
+
+    formation_.position.x = 0.0;
+    formation_.position.y = 0.0;
+    formation_.position.z = 0.0;
+    formation_.orientation.x = 0.0;
+    formation_.orientation.y = 0.0;
+    formation_.orientation.z = 0.0;
+    formation_.orientation.w = 1.0;
+
+    r1_ = 0.0;
+    r2_ = 5.0;
     r3_ = 0.0;
     r4_ = 1.0;
     ros::param::get("uav_id", id_);
 
-    mavros_state_sub_ = nh->subscribe("mavros/state", 1, &SwarmControllerNode::mavrosStateCb, this);
-    migration_point_sub_ = nh->subscribe("/migration_point", 1, &SwarmControllerNode::migrationPointCb, this);
-    global_position_sub_ = nh->subscribe("mavros/global_position/global", 1, &SwarmControllerNode::globalPositionCb, this);
-    odom_sub_ = nh->subscribe("mavros/local_position/odom", 1, &SwarmControllerNode::odomCb, this);
-    enable_control_sub_ = nh->subscribe("/enable_control", 1, &SwarmControllerNode::enableControlCb, this);
-    uavs_odom_sub_ = nh->subscribe("/uavs_odom", 10, &SwarmControllerNode::uavsOdomCb, this);
+    mavros_state_sub_ = nh->subscribe("mavros/state", 1, &FormationControllerNode::mavrosStateCb, this);
+    migration_point_sub_ = nh->subscribe("/migration_point", 1, &FormationControllerNode::migrationPointCb, this);
+    formation_points_sub_ = nh->subscribe("/formation_points", 1, &FormationControllerNode::formationPointsCb, this);
+    global_position_sub_ = nh->subscribe("mavros/global_position/global", 1, &FormationControllerNode::globalPositionCb, this);
+    odom_sub_ = nh->subscribe("mavros/local_position/odom", 1, &FormationControllerNode::odomCb, this);
+    enable_control_sub_ = nh->subscribe("/enable_control", 1, &FormationControllerNode::enableControlCb, this);
+    uavs_odom_sub_ = nh->subscribe("/uavs_odom", 10, &FormationControllerNode::uavsOdomCb, this);
     uav_odom_pub_ = nh->advertise<uav_swarm_msgs::OdometryWithUavId>("/uavs_odom", 10);
     cmd_vel_pub_ = nh->advertise<geometry_msgs::TwistStamped>("mavros/setpoint_velocity/cmd_vel", 10);
 
@@ -45,10 +55,11 @@ SwarmControllerNode::SwarmControllerNode(ros::NodeHandle *nh)
     vRes_pub_ = nh->advertise<geometry_msgs::Point>("vRes", 10);
 }
 
-SwarmControllerNode::~SwarmControllerNode()
+FormationControllerNode::~FormationControllerNode()
 {
     mavros_state_sub_.shutdown();
     migration_point_sub_.shutdown();
+    formation_points_sub_.shutdown();
     global_position_sub_.shutdown();
     odom_sub_.shutdown();
     enable_control_sub_.shutdown();
@@ -63,7 +74,7 @@ SwarmControllerNode::~SwarmControllerNode()
     vRes_pub_.shutdown();
 }
 
-void SwarmControllerNode::controlLoop()
+void FormationControllerNode::controlLoop()
 {
     // Calculate each rule's influence
     tf::Vector3 v1, v2, v3, v4, vRes;
@@ -119,7 +130,7 @@ void SwarmControllerNode::controlLoop()
     }*/
 }
 
-void SwarmControllerNode::publishUavOdom()
+void FormationControllerNode::publishUavOdom()
 {
     uav_swarm_msgs::OdometryWithUavId msg;
 
@@ -138,7 +149,7 @@ void SwarmControllerNode::publishUavOdom()
     uav_odom_pub_.publish(msg);
 }
 
-void SwarmControllerNode::publishVelocity( double velX, double velY )
+void FormationControllerNode::publishVelocity( double velX, double velY )
 {
     geometry_msgs::TwistStamped msg;
 
@@ -148,7 +159,7 @@ void SwarmControllerNode::publishVelocity( double velX, double velY )
     cmd_vel_pub_.publish(msg);
 }
 
-void SwarmControllerNode::publishVectors( const tf::Vector3 &v1, const tf::Vector3 &v2, const tf::Vector3 &v3,
+void FormationControllerNode::publishVectors( const tf::Vector3 &v1, const tf::Vector3 &v2, const tf::Vector3 &v3,
                                           const tf::Vector3 &v4, const tf::Vector3 &vRes )
 {
     geometry_msgs::Point v1Msg, v2Msg, v3Msg, v4Msg, vResMsg;
@@ -174,7 +185,7 @@ void SwarmControllerNode::publishVectors( const tf::Vector3 &v1, const tf::Vecto
     vRes_pub_.publish( vResMsg );
 }
 
-void SwarmControllerNode::mavrosStateCb(const mavros_msgs::StateConstPtr &msg)
+void FormationControllerNode::mavrosStateCb(const mavros_msgs::StateConstPtr &msg)
 {
     if(msg->mode == std::string("CMODE(0)"))
         return;
@@ -184,14 +195,28 @@ void SwarmControllerNode::mavrosStateCb(const mavros_msgs::StateConstPtr &msg)
     armed_ = msg->armed==128;
 }
 
-void SwarmControllerNode::migrationPointCb( const geometry_msgs::PointConstPtr &msg )
+void FormationControllerNode::migrationPointCb( const geometry_msgs::PointConstPtr &msg )
 {
     migrationPoint_.setX( msg->x );
     migrationPoint_.setX( msg->y );
     migrationPoint_.setZ( msg->z );
 }
 
-void SwarmControllerNode::globalPositionCb( const sensor_msgs::NavSatFix &msg )
+void FormationControllerNode::formationPointsCb(const geometry_msgs::PoseArrayConstPtr &msg )
+{
+    if ( msg->poses.size() > id_ )
+    {
+        formation_.position.x = msg->poses[id_].position.x;
+        formation_.position.y = msg->poses[id_].position.y;
+        formation_.position.z = msg->poses[id_].position.z;
+        formation_.orientation.x = msg->poses[id_].orientation.x;
+        formation_.orientation.y = msg->poses[id_].orientation.y;
+        formation_.orientation.z = msg->poses[id_].orientation.z;
+        formation_.orientation.w = msg->poses[id_].orientation.w;
+    }
+}
+
+void FormationControllerNode::globalPositionCb( const sensor_msgs::NavSatFix &msg )
 {
     // Quando a primeira mensagem de GPS chegar, calcular dx_ e dy_
     if ( !initialDeltasCalculated_ )
@@ -209,7 +234,7 @@ void SwarmControllerNode::globalPositionCb( const sensor_msgs::NavSatFix &msg )
     }
 }
 
-void SwarmControllerNode::odomCb( const nav_msgs::OdometryConstPtr &msg )
+void FormationControllerNode::odomCb( const nav_msgs::OdometryConstPtr &msg )
 {
     // Get UAV odometry from the received message
     odom_.pose.pose.position.x = msg->pose.pose.position.x + dx_;
@@ -245,13 +270,13 @@ void SwarmControllerNode::odomCb( const nav_msgs::OdometryConstPtr &msg )
     );
 }
 
-void SwarmControllerNode::enableControlCb( const std_msgs::BoolConstPtr &msg )
+void FormationControllerNode::enableControlCb( const std_msgs::BoolConstPtr &msg )
 {
     enableControl_ = msg->data;
 }
 
-void SwarmControllerNode::uavsOdomCb( const uav_swarm_msgs::OdometryWithUavIdConstPtr &msg )
-{   
+void FormationControllerNode::uavsOdomCb( const uav_swarm_msgs::OdometryWithUavIdConstPtr &msg )
+{
     // Only consider messages that came from neighbors
     if ( msg->id != id_ )
     {
@@ -303,7 +328,7 @@ void SwarmControllerNode::uavsOdomCb( const uav_swarm_msgs::OdometryWithUavIdCon
 // REYNOLDS RULES
 
 // Rule 1: Flocking
-void SwarmControllerNode::rule1( tf::Vector3& v )
+void FormationControllerNode::rule1( tf::Vector3& v )
 {
     v.setValue( 0.0, 0.0, 0.0 );
 
@@ -337,7 +362,7 @@ void SwarmControllerNode::rule1( tf::Vector3& v )
 
 
 // Rule 2: Collision Avoidance
-void SwarmControllerNode::rule2( tf::Vector3& v )
+void FormationControllerNode::rule2( tf::Vector3& v )
 {
     v.setValue( 0.0, 0.0, 0.0 );
 
@@ -379,7 +404,7 @@ void SwarmControllerNode::rule2( tf::Vector3& v )
 }
 
 // Rule 3: Velocity Matching
-void SwarmControllerNode::rule3( tf::Vector3& v )
+void FormationControllerNode::rule3( tf::Vector3& v )
 {
     v.setValue( 0.0, 0.0, 0.0 );
 
@@ -414,26 +439,45 @@ void SwarmControllerNode::rule3( tf::Vector3& v )
 
 
 // Rule 4: Migration
-void SwarmControllerNode::rule4( tf::Vector3& v )
+void FormationControllerNode::rule4( tf::Vector3& v )
 {
     v.setValue( 0.0, 0.0, 0.0 );
 
-    v.setX( migrationPoint_.getX() - odom_.pose.pose.position.x );
-    v.setY( migrationPoint_.getY() - odom_.pose.pose.position.y );
-    v.setZ( migrationPoint_.getZ() - odom_.pose.pose.position.z );
+    int n = neighbors_.size();
 
-    /*
-    if ( v.length() > 0.01 )
+    if ( n > 0 )
     {
-        v.normalize();
-        v *= MAXVEL;
+        if ( id_ != 0 )
+        {
+            // Move according to leader
+            tf::Vector3 leader( 0.0, 0.0, 0.0 );
+            for ( int i(0); i < n; i++ )
+            {
+                if ( neighbors_[i].id == 0 )
+                {
+                    leader.setX( neighbors_[i].odom.pose.pose.position.x );
+                    leader.setY( neighbors_[i].odom.pose.pose.position.y );
+                    leader.setZ( neighbors_[i].odom.pose.pose.position.z );
+                }
+            }
+
+            v.setX( formation_.position.x + leader.getX() - odom_.pose.pose.position.x );
+            v.setY( formation_.position.y + leader.getY() - odom_.pose.pose.position.y );
+            v.setZ( formation_.position.z + leader.getZ() - odom_.pose.pose.position.z );
+        }
+        else
+        {
+            // I am the leader
+            v.setX( formation_.position.x + migrationPoint_.getX() - odom_.pose.pose.position.x );
+            v.setY( formation_.position.y + migrationPoint_.getY() - odom_.pose.pose.position.y );
+            v.setZ( formation_.position.z + migrationPoint_.getZ() - odom_.pose.pose.position.z );
+        }
     }
-    */
 }
 
 
 // Returns the distance in meters between 2 points given their GPS coordinates
-double SwarmControllerNode::haversines( double lat1, double lon1, double lat2, double lon2 )
+double FormationControllerNode::haversines( double lat1, double lon1, double lat2, double lon2 )
 {
     double a, c, d, dLat, dLon;
     int r = 6371000; // raio médio da Terra em metros

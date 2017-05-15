@@ -1,0 +1,263 @@
+LINHA HORIZONTAL:
+
+rostopic pub -1 /formation_points geometry_msgs/PoseArray "header:
+  seq: 0
+  stamp:
+    secs: 0
+    nsecs: 0
+  frame_id: ''
+poses:
+- position:
+    x: 0.0
+    y: 0.0
+    z: 0.0
+  orientation:
+    x: 0.0
+    y: 0.0
+    z: 0.0
+    w: 1.0
+- position:
+    x: 5.0
+    y: 0.0
+    z: 0.0
+  orientation:
+    x: 0.0
+    y: 0.0
+    z: 0.0
+    w: 1.0
+- position:
+    x: 10.0
+    y: 0.0
+    z: 0.0
+  orientation:
+    x: 0.0
+    y: 0.0
+    z: 0.0
+    w: 1.0"
+    
+    
+LINHA VERTICAL:
+
+rostopic pub -1 /formation_points geometry_msgs/PoseArray "header:
+  seq: 0
+  stamp:
+    secs: 0
+    nsecs: 0
+  frame_id: ''
+poses:
+- position:
+    x: 0.0
+    y: 0.0
+    z: 0.0
+  orientation:
+    x: 0.0
+    y: 0.0
+    z: 0.0
+    w: 1.0
+- position:
+    x: 0.0
+    y: 5.0
+    z: 0.0
+  orientation:
+    x: 0.0
+    y: 0.0
+    z: 0.0
+    w: 1.0
+- position:
+    x: 0.0
+    y: 10.0
+    z: 0.0
+  orientation:
+    x: 0.0
+    y: 0.0
+    z: 0.0
+    w: 1.0"
+    
+    
+LINHA VERTICAL COM OFFSET NO EIXO X:
+
+rostopic pub -1 /formation_points geometry_msgs/PoseArray "header:
+  seq: 0
+  stamp:
+    secs: 0
+    nsecs: 0
+  frame_id: ''
+poses:
+- position:
+    x: 0.0
+    y: 0.0
+    z: 0.0
+  orientation:
+    x: 0.0
+    y: 0.0
+    z: 0.0
+    w: 1.0
+- position:
+    x: 5.0
+    y: 5.0
+    z: 0.0
+  orientation:
+    x: 0.0
+    y: 0.0
+    z: 0.0
+    w: 1.0
+- position:
+    x: 5.0
+    y: 10.0
+    z: 0.0
+  orientation:
+    x: 0.0
+    y: 0.0
+    z: 0.0
+    w: 1.0"
+
+
+TRIANGULO:
+
+rostopic pub -1 /formation_points geometry_msgs/PoseArray "header:
+  seq: 0
+  stamp:
+    secs: 0
+    nsecs: 0
+  frame_id: ''
+poses:
+- position:
+    x: -20.0
+    y: -20.0
+    z: 0.0
+  orientation:
+    x: 0.0
+    y: 0.0
+    z: 0.0
+    w: 1.0
+- position:
+    x: 3.0
+    y: -3.0
+    z: 0.0
+  orientation:
+    x: 0.0
+    y: 0.0
+    z: 0.0
+    w: 1.0
+- position:
+    x: -3.0
+    y: -3.0
+    z: 0.0
+  orientation:
+    x: 0.0
+    y: 0.0
+    z: 0.0
+    w: 1.0"
+    
+    
+    
+    
+TESTE:
+
+rostopic pub -1 /formation_points geometry_msgs/PoseArray "header:
+  seq: 0
+  stamp:
+    secs: 0
+    nsecs: 0
+  frame_id: ''
+poses:
+- position:
+    x: -20.0
+    y: 30.0
+    z: 0.0
+  orientation:
+    x: 0.0
+    y: 0.0
+    z: 0.0
+    w: 1.0
+- position:
+    x: 3.0
+    y: -3.0
+    z: 0.0
+  orientation:
+    x: 0.0
+    y: 0.0
+    z: 0.0
+    w: 1.0
+- position:
+    x: -3.0
+    y: -3.0
+    z: 0.0
+  orientation:
+    x: 0.0
+    y: 0.0
+    z: 0.0
+    w: 1.0"
+    
+    
+rostopic pub -1 /formation_points geometry_msgs/PoseArray "header:
+  seq: 0
+  stamp:
+    secs: 0
+    nsecs: 0
+  frame_id: ''
+poses:
+- position:
+    x: 30.0
+    y: 15.0
+    z: 0.0
+  orientation:
+    x: 0.0
+    y: 0.0
+    z: 0.0
+    w: 1.0
+- position:
+    x: -3.0
+    y: 3.0
+    z: 0.0
+  orientation:
+    x: 0.0
+    y: 0.0
+    z: 0.0
+    w: 1.0
+- position:
+    x: -3.0
+    y: -3.0
+    z: 0.0
+  orientation:
+    x: 0.0
+    y: 0.0
+    z: 0.0
+    w: 1.0"
+    
+    
+    
+rostopic pub -1 /formation_points geometry_msgs/PoseArray "header:
+  seq: 0
+  stamp:
+    secs: 0
+    nsecs: 0
+  frame_id: ''
+poses:
+- position:
+    x: 20.0
+    y: -35.0
+    z: 0.0
+  orientation:
+    x: 0.0
+    y: 0.0
+    z: 0.0
+    w: 1.0
+- position:
+    x: 3.0
+    y: 3.0
+    z: 0.0
+  orientation:
+    x: 0.0
+    y: 0.0
+    z: 0.0
+    w: 1.0
+- position:
+    x: -3.0
+    y: 3.0
+    z: 0.0
+  orientation:
+    x: 0.0
+    y: 0.0
+    z: 0.0
+    w: 1.0"
