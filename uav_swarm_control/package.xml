@@ -19,7 +19,6 @@
   <build_depend>sensor_msgs</build_depend>
   <build_depend>geometry_msgs</build_depend>
   <build_depend>visualization_msgs</build_depend>
-  <build_depend>mavros_msgs</build_depend>
   <build_depend>uav_swarm_msgs</build_depend>
   
   <run_depend>roscpp</run_depend>
@@ -29,7 +28,6 @@
   <run_depend>sensor_msgs</run_depend>
   <run_depend>geometry_msgs</run_depend>
   <run_depend>visualization_msgs</run_depend>
-  <run_depend>mavros_msgs</run_depend>
   <run_depend>uav_swarm_msgs</run_depend>
   
   

@@ -37,7 +37,6 @@ FormationControllerNode::FormationControllerNode(ros::NodeHandle *nh)
     r4_ = 1.0;
     ros::param::get("uav_id", id_);
 
-    mavros_state_sub_ = nh->subscribe("mavros/state", 1, &FormationControllerNode::mavrosStateCb, this);
     migration_point_sub_ = nh->subscribe("/migration_point", 1, &FormationControllerNode::migrationPointCb, this);
     formation_points_sub_ = nh->subscribe("/formation_points", 1, &FormationControllerNode::formationPointsCb, this);
     global_position_sub_ = nh->subscribe("mavros/global_position/global", 1, &FormationControllerNode::globalPositionCb, this);
@@ -57,7 +56,6 @@ FormationControllerNode::FormationControllerNode(ros::NodeHandle *nh)
 
 FormationControllerNode::~FormationControllerNode()
 {
-    mavros_state_sub_.shutdown();
     migration_point_sub_.shutdown();
     formation_points_sub_.shutdown();
     global_position_sub_.shutdown();
@@ -183,16 +181,6 @@ void FormationControllerNode::publishVectors( const tf::Vector3 &v1, const tf::V
     v3_pub_.publish( v3Msg );
     v4_pub_.publish( v4Msg );
     vRes_pub_.publish( vResMsg );
-}
-
-void FormationControllerNode::mavrosStateCb(const mavros_msgs::StateConstPtr &msg)
-{
-    if(msg->mode == std::string("CMODE(0)"))
-        return;
-    //ROS_INFO("I heard: [%s] [%d] [%d]", msg->mode.c_str(), msg->armed, msg->guided);
-    mode_ = msg->mode;
-    guided_ = msg->guided==128;
-    armed_ = msg->armed==128;
 }
 
 void FormationControllerNode::migrationPointCb( const geometry_msgs::PointConstPtr &msg )

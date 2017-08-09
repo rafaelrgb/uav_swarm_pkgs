@@ -20,7 +20,6 @@ GasFinderNode::GasFinderNode(ros::NodeHandle *nh)
     ros::param::get("gas_finder_node/uav_id", id_);
     srand ((unsigned)time(NULL));
 
-    mavros_state_sub_ = nh->subscribe("mavros/state", 1, &GasFinderNode::mavrosStateCb, this);
     migration_point_sub_ = nh->subscribe("/migration_point", 1, &GasFinderNode::migrationPointCb, this);
     global_position_sub_ = nh->subscribe("mavros/global_position/global", 1, &GasFinderNode::globalPositionCb, this);
     odom_sub_ = nh->subscribe("mavros/local_position/odom", 1, &GasFinderNode::odomCb, this);
@@ -39,7 +38,6 @@ GasFinderNode::GasFinderNode(ros::NodeHandle *nh)
 
 GasFinderNode::~GasFinderNode()
 {
-    mavros_state_sub_.shutdown();
     migration_point_sub_.shutdown();
     global_position_sub_.shutdown();
     odom_sub_.shutdown();
@@ -164,16 +162,6 @@ void GasFinderNode::publishVectors( const tf::Vector3 &v1, const tf::Vector3 &v2
     v3_pub_.publish( v3Msg );
     v4_pub_.publish( v4Msg );
     vRes_pub_.publish( vResMsg );
-}
-
-void GasFinderNode::mavrosStateCb(const mavros_msgs::StateConstPtr &msg)
-{
-    if(msg->mode == std::string("CMODE(0)"))
-        return;
-    //ROS_INFO("I heard: [%s] [%d] [%d]", msg->mode.c_str(), msg->armed, msg->guided);
-    mode_ = msg->mode;
-    guided_ = msg->guided==128;
-    armed_ = msg->armed==128;
 }
 
 void GasFinderNode::migrationPointCb( const geometry_msgs::PointConstPtr &msg )

@@ -14,8 +14,6 @@
 
 #include <string>
 #include "Node.h"
-#include <mavros_msgs/OverrideRCIn.h>
-#include <mavros_msgs/State.h>
 #include <nav_msgs/Odometry.h>
 #include <sensor_msgs/NavSatFix.h>
 #include <geometry_msgs/Point.h>
@@ -65,13 +63,7 @@ private:
   tf::Vector3 migrationPoint_;
   std::vector<uav_swarm_msgs::OdometryWithUavId> neighbors_;
 
-  // Flight mode
-  std::string mode_;
-  bool guided_;
-  bool armed_;
-
   // ROS objects
-  ros::Subscriber mavros_state_sub_;    // Subscriber to flight mode
   ros::Subscriber migration_point_sub_; // Subscriber to migration point
   ros::Subscriber global_position_sub_; // Subscriber to global position
   ros::Subscriber odom_sub_;            // Subscriber to odometry
@@ -88,7 +80,6 @@ private:
   ros::Publisher vRes_pub_;
 
   // Member functions
-  void mavrosStateCb( const mavros_msgs::StateConstPtr &msg );
   void migrationPointCb( const geometry_msgs::PointConstPtr &msg );
   void globalPositionCb( const sensor_msgs::NavSatFix &msg );
   void odomCb( const nav_msgs::OdometryConstPtr &msg );

@@ -9,13 +9,12 @@ find_package(catkin REQUIRED COMPONENTS
   sensor_msgs
   geometry_msgs
   visualization_msgs
-  mavros_msgs
   uav_swarm_msgs
 )
  
 catkin_package(
     INCLUDE_DIRS include
-    CATKIN_DEPENDS roscpp tf std_msgs nav_msgs sensor_msgs geometry_msgs visualization_msgs mavros_msgs
+    CATKIN_DEPENDS roscpp tf std_msgs nav_msgs sensor_msgs geometry_msgs visualization_msgs
 )
 
 include_directories(

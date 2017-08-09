@@ -28,7 +28,6 @@ SwarmControllerNode::SwarmControllerNode(ros::NodeHandle *nh)
     r4_ = 1.0;
     ros::param::get("uav_id", id_);
 
-    mavros_state_sub_ = nh->subscribe("mavros/state", 1, &SwarmControllerNode::mavrosStateCb, this);
     migration_point_sub_ = nh->subscribe("/migration_point", 1, &SwarmControllerNode::migrationPointCb, this);
     global_position_sub_ = nh->subscribe("mavros/global_position/global", 1, &SwarmControllerNode::globalPositionCb, this);
     odom_sub_ = nh->subscribe("mavros/local_position/odom", 1, &SwarmControllerNode::odomCb, this);
@@ -47,7 +46,6 @@ SwarmControllerNode::SwarmControllerNode(ros::NodeHandle *nh)
 
 SwarmControllerNode::~SwarmControllerNode()
 {
-    mavros_state_sub_.shutdown();
     migration_point_sub_.shutdown();
     global_position_sub_.shutdown();
     odom_sub_.shutdown();
@@ -172,16 +170,6 @@ void SwarmControllerNode::publishVectors( const tf::Vector3 &v1, const tf::Vecto
     v3_pub_.publish( v3Msg );
     v4_pub_.publish( v4Msg );
     vRes_pub_.publish( vResMsg );
-}
-
-void SwarmControllerNode::mavrosStateCb(const mavros_msgs::StateConstPtr &msg)
-{
-    if(msg->mode == std::string("CMODE(0)"))
-        return;
-    //ROS_INFO("I heard: [%s] [%d] [%d]", msg->mode.c_str(), msg->armed, msg->guided);
-    mode_ = msg->mode;
-    guided_ = msg->guided==128;
-    armed_ = msg->armed==128;
 }
 
 void SwarmControllerNode::migrationPointCb( const geometry_msgs::PointConstPtr &msg )
