@@ -18,6 +18,7 @@
 #include <sensor_msgs/NavSatFix.h>
 #include <geometry_msgs/Point.h>
 #include <geometry_msgs/TwistStamped.h>
+#include <geometry_msgs/Twist.h>
 #include <std_msgs/Bool.h>
 #include <uav_swarm_msgs/OdometryWithUavId.h>
 #include <tf/transform_broadcaster.h>
@@ -41,8 +42,12 @@ public:
 private:
   virtual void controlLoop();
 
-  // UAV id
+  // UAV params
   int id_;
+  std::string fix_topic_;
+  std::string odom_topic_;
+  std::string cmd_vel_topic_;
+  std::string tf_frame_;
 
   // Differences from current position to origin
   double dx_;

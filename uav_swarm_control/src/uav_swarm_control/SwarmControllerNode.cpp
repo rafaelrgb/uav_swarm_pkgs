@@ -27,14 +27,21 @@ SwarmControllerNode::SwarmControllerNode(ros::NodeHandle *nh)
     r3_ = 0.0;
     r4_ = 1.0;
     ros::param::get("uav_id", id_);
+    ros::param::get("/uav_swarm_control/fix_topic", fix_topic_);
+    ros::param::get("/uav_swarm_control/odom_topic", odom_topic_);
+    ros::param::get("/uav_swarm_control/cmd_vel_topic", cmd_vel_topic_);
+    ros::param::get("tf_frame", tf_frame_);
+
+    std::string ronaldo = "ronaldo";
 
     migration_point_sub_ = nh->subscribe("/migration_point", 1, &SwarmControllerNode::migrationPointCb, this);
-    global_position_sub_ = nh->subscribe("mavros/global_position/global", 1, &SwarmControllerNode::globalPositionCb, this);
-    odom_sub_ = nh->subscribe("mavros/local_position/odom", 1, &SwarmControllerNode::odomCb, this);
+    global_position_sub_ = nh->subscribe(fix_topic_, 1, &SwarmControllerNode::globalPositionCb, this);
+    odom_sub_ = nh->subscribe(odom_topic_, 1, &SwarmControllerNode::odomCb, this);
     enable_control_sub_ = nh->subscribe("/enable_control", 1, &SwarmControllerNode::enableControlCb, this);
     uavs_odom_sub_ = nh->subscribe("/uavs_odom", 10, &SwarmControllerNode::uavsOdomCb, this);
     uav_odom_pub_ = nh->advertise<uav_swarm_msgs::OdometryWithUavId>("/uavs_odom", 10);
-    cmd_vel_pub_ = nh->advertise<geometry_msgs::TwistStamped>("mavros/setpoint_velocity/cmd_vel", 10);
+    //cmd_vel_pub_ = nh->advertise<geometry_msgs::TwistStamped>(cmd_vel_topic_, 10);
+    cmd_vel_pub_ = nh->advertise<geometry_msgs::Twist>(cmd_vel_topic_, 10);
 
 
     v1_pub_ = nh->advertise<geometry_msgs::Point>("v1", 10);
@@ -138,10 +145,13 @@ void SwarmControllerNode::publishUavOdom()
 
 void SwarmControllerNode::publishVelocity( double velX, double velY )
 {
-    geometry_msgs::TwistStamped msg;
+    //geometry_msgs::TwistStamped msg;
+    geometry_msgs::Twist msg;
 
-    msg.twist.linear.x = velX;
-    msg.twist.linear.y = velY;
+    //msg.twist.linear.x = velX;
+    //msg.twist.linear.y = velY;
+    msg.linear.x = velX;
+    msg.linear.y = velY;
 
     cmd_vel_pub_.publish(msg);
 }
@@ -213,7 +223,7 @@ void SwarmControllerNode::odomCb( const nav_msgs::OdometryConstPtr &msg )
 
     // Publish to tf
     std::stringstream ss;
-    ss << "/uav" << id_ << "/base_link";
+    ss << tf_frame_ << "/base_link";
     pose_br_.sendTransform(
         tf::StampedTransform(
             tf::Transform(

@@ -15,9 +15,13 @@
 
     <param name="/uav_swarm_control/origin_lat" value="$(arg origin_lat)" />
     <param name="/uav_swarm_control/origin_lon" value="$(arg origin_lon)" />
+    <param name="/uav_swarm_control/fix_topic" value="mavros/global_position/global"/>
+    <param name="/uav_swarm_control/odom_topic" value="mavros/local_position/odom"/>
+    <param name="/uav_swarm_control/cmd_vel_topic" value="mavros/setpoint_velocity/cmd_vel"/>
 
     <group ns="uav0">
         <param name="uav_id" value="$(arg uav0_id)" />
+        <param name="tf_frame" value="uav$(arg uav0_id)"/>
 
         <node pkg="mavros" type="mavros_node" name="mavros" required="true" clear_params="true" >
                 <param name="fcu_url" value="udp://127.0.0.1:14551@" />
@@ -37,6 +41,7 @@
 
     <group ns="uav1">
             <param name="uav_id" value="$(arg uav1_id)" />
+            <param name="tf_frame" value="uav$(arg uav1_id)"/>
 
             <node pkg="mavros" type="mavros_node" name="mavros" required="true" clear_params="true" >
                     <param name="fcu_url" value="udp://127.0.0.1:14561@" />
@@ -56,6 +61,7 @@
 
     <group ns="uav2">
         <param name="uav_id" value="$(arg uav2_id)" />
+        <param name="tf_frame" value="uav$(arg uav2_id)"/>
 
         <node pkg="mavros" type="mavros_node" name="mavros" required="true" clear_params="true" >
                 <param name="fcu_url" value="udp://127.0.0.1:14571@" />
