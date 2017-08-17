@@ -18,21 +18,20 @@ SwarmControllerNode::SwarmControllerNode(ros::NodeHandle *nh)
   : Node(nh, 10)
 {
     enableControl_ = false;
-    dx_ = 0.0;
-    dy_ = 0.0;
-    initialDeltasCalculated_ = false;
     migrationPoint_.setValue( 0.0, 0.0, 0.0 );
     r1_ = 0.1;
     r2_ = 0.1;
     r3_ = 0.0;
     r4_ = 1.0;
-    ros::param::get("uav_id", id_);
+    ros::param::get("/uav_swarm_control/simulation", simulation_);
     ros::param::get("/uav_swarm_control/fix_topic", fix_topic_);
     ros::param::get("/uav_swarm_control/odom_topic", odom_topic_);
     ros::param::get("/uav_swarm_control/cmd_vel_topic", cmd_vel_topic_);
+    ros::param::get("uav_id", id_);
     ros::param::get("tf_frame", tf_frame_);
-
-    std::string ronaldo = "ronaldo";
+    ros::param::get("x", dx_);
+    ros::param::get("y", dy_);
+    ros::param::get("z", dz_);
 
     migration_point_sub_ = nh->subscribe("/migration_point", 1, &SwarmControllerNode::migrationPointCb, this);
     global_position_sub_ = nh->subscribe(fix_topic_, 1, &SwarmControllerNode::globalPositionCb, this);
@@ -96,10 +95,28 @@ void SwarmControllerNode::controlLoop()
     // PUBLISH VELOCITY
     if ( enableControl_ == true )
     {
-        publishVelocity( vRes.getX(), vRes.getY() );
+        // Transform vRes into the quadrotor's base frame
+        geometry_msgs::Vector3Stamped stamped_in, stamped_out;
+
+        stamped_in.header.frame_id = "/map";
+        stamped_in.vector.x = vRes.getX();
+        stamped_in.vector.y = vRes.getY();
+        stamped_in.vector.z = vRes.getZ();
+
+        listener_.transformVector(tf_frame_, stamped_in, stamped_out);
+
+        // Retrieve the data from stamped_out and publish it
+        tf::Vector3 vResTransformed;
+        vResTransformed.setValue(stamped_out.vector.x, stamped_out.vector.y, stamped_out.vector.z);
+
+        publishVelocity( vResTransformed.getX(), vResTransformed.getY() );
     }
 
     publishUavOdom();
+
+
+    // TESTE: Imprimir a odometria do drone para ver se está certa
+    //ROS_INFO_STREAM("\nID: " << id_ << " | x: " << odom_.pose.pose.position.x << " | y: " << odom_.pose.pose.position.y << " | z: " << odom_.pose.pose.position.z);
 
 
     // TESTE: Imprimir os neighbors para ver se o robô está detectando corretamente
@@ -185,34 +202,46 @@ void SwarmControllerNode::publishVectors( const tf::Vector3 &v1, const tf::Vecto
 void SwarmControllerNode::migrationPointCb( const geometry_msgs::PointConstPtr &msg )
 {
     migrationPoint_.setX( msg->x );
-    migrationPoint_.setX( msg->y );
+    migrationPoint_.setY( msg->y );
     migrationPoint_.setZ( msg->z );
 }
 
 void SwarmControllerNode::globalPositionCb( const sensor_msgs::NavSatFix &msg )
 {
-    // Quando a primeira mensagem de GPS chegar, calcular dx_ e dy_
-    if ( !initialDeltasCalculated_ )
+    // Quando a primeira mensagem de GPS chegar, calcular dx_, dy_ e dz_
+    /*if ( !initialDeltasCalculated_ && !simulation_ )
     {
         double originLat, originLon;
         ros::param::get("/uav_swarm_control/origin_lat", originLat);
         ros::param::get("/uav_swarm_control/origin_lon", originLon);
         double lat = msg.latitude;
         double lon = msg.longitude;
+        double alt = msg.altitude;
         dx_ = haversines( originLat, originLon, originLat, lon );
         dy_ = haversines( originLat, originLon, lat, originLon );
+        dz_ = alt;
         if ( (lon - originLon) < 0 ) dx_ *= -1;
         if ( (lat - originLat) < 0 ) dy_ *= -1;
         initialDeltasCalculated_ = true;
-    }
+    }*/
 }
 
 void SwarmControllerNode::odomCb( const nav_msgs::OdometryConstPtr &msg )
 {
     // Get UAV odometry from the received message
-    odom_.pose.pose.position.x = msg->pose.pose.position.x + dx_;
-    odom_.pose.pose.position.y = msg->pose.pose.position.y + dy_;
-    odom_.pose.pose.position.z = msg->pose.pose.position.z;
+    // If ground truth data from the simulation is being used, ignore the deltas
+    if (simulation_)
+    {
+      odom_.pose.pose.position.x = msg->pose.pose.position.x;
+      odom_.pose.pose.position.y = msg->pose.pose.position.y;
+      odom_.pose.pose.position.z = msg->pose.pose.position.z;
+    }
+    else
+    {
+      odom_.pose.pose.position.x = msg->pose.pose.position.x + dx_;
+      odom_.pose.pose.position.y = msg->pose.pose.position.y + dy_;
+      odom_.pose.pose.position.z = msg->pose.pose.position.z + dz_;
+    }
     odom_.pose.pose.orientation.x = msg->pose.pose.orientation.x;
     odom_.pose.pose.orientation.y = msg->pose.pose.orientation.y;
     odom_.pose.pose.orientation.z = msg->pose.pose.orientation.z;
@@ -222,8 +251,6 @@ void SwarmControllerNode::odomCb( const nav_msgs::OdometryConstPtr &msg )
     odom_.twist.twist.linear.z = msg->twist.twist.linear.z;
 
     // Publish to tf
-    std::stringstream ss;
-    ss << tf_frame_ << "/base_link";
     pose_br_.sendTransform(
         tf::StampedTransform(
             tf::Transform(
@@ -238,7 +265,7 @@ void SwarmControllerNode::odomCb( const nav_msgs::OdometryConstPtr &msg )
                     odom_.pose.pose.position.y,
                     odom_.pose.pose.position.z
                 )
-            ), ros::Time::now(), "world", ss.str()
+            ), ros::Time::now(), "map", tf_frame_
         )
     );
 }

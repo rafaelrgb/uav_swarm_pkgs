@@ -19,6 +19,7 @@
 #include <geometry_msgs/Point.h>
 #include <geometry_msgs/TwistStamped.h>
 #include <geometry_msgs/Twist.h>
+#include <geometry_msgs/Vector3Stamped.h>
 #include <std_msgs/Bool.h>
 #include <uav_swarm_msgs/OdometryWithUavId.h>
 #include <tf/transform_broadcaster.h>
@@ -43,6 +44,7 @@ private:
   virtual void controlLoop();
 
   // UAV params
+  bool simulation_;
   int id_;
   std::string fix_topic_;
   std::string odom_topic_;
@@ -52,7 +54,7 @@ private:
   // Differences from current position to origin
   double dx_;
   double dy_;
-  bool initialDeltasCalculated_;
+  double dz_;
 
   // Enable control
   bool enableControl_;
@@ -77,6 +79,7 @@ private:
   ros::Publisher uav_odom_pub_;         // UAV odom publisher
   ros::Publisher cmd_vel_pub_;          // Velocity publisher
   tf::TransformBroadcaster pose_br_;
+  tf::TransformListener listener_;
 
   ros::Publisher v1_pub_;
   ros::Publisher v2_pub_;
