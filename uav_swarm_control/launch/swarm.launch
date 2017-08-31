@@ -1,0 +1,111 @@
+<launch>
+
+    <!-- arguments that can be passed by the command line or read from a file -->
+    <arg name="simulation" default="true"/>
+    <arg name="origin_lat" default="49.9"/>
+    <arg name="origin_lon" default="8.9"/>
+    <arg name="fix_topic" default="fix"/>
+    <arg name="odom_topic" default="ground_truth/state"/>
+    <arg name="cmd_vel_topic" default="cmd_vel"/>
+    <arg name="quadrotor_1_x" default="-5.0"/>
+    <arg name="quadrotor_1_y" default="-5.0"/>
+    <arg name="quadrotor_1_z" default="2.0"/>
+    <arg name="quadrotor_1_R" default="0.0"/>
+    <arg name="quadrotor_1_P" default="0.0"/>
+    <arg name="quadrotor_1_Y" default="0.0"/>
+    <arg name="quadrotor_2_x" default="0.0"/>
+    <arg name="quadrotor_2_y" default="0.0"/>
+    <arg name="quadrotor_2_z" default="2.0"/>
+    <arg name="quadrotor_2_R" default="0.0"/>
+    <arg name="quadrotor_2_P" default="0.0"/>
+    <arg name="quadrotor_2_Y" default="0.0"/>
+    <arg name="quadrotor_3_x" default="5.0"/>
+    <arg name="quadrotor_3_y" default="5.0"/>
+    <arg name="quadrotor_3_z" default="2.0"/>
+    <arg name="quadrotor_3_R" default="0.0"/>
+    <arg name="quadrotor_3_P" default="0.0"/>
+    <arg name="quadrotor_3_Y" default="0.0"/>
+
+    <!-- global parameters -->
+    <param name="/uav_swarm_control/simulation" value="$(arg simulation)" />
+    <param name="/uav_swarm_control/origin_lat" value="$(arg origin_lat)" />
+    <param name="/uav_swarm_control/origin_lon" value="$(arg origin_lon)" />
+    <param name="/uav_swarm_control/fix_topic" value="$(arg fix_topic)"/>
+    <param name="/uav_swarm_control/odom_topic" value="$(arg odom_topic)"/>
+    <param name="/uav_swarm_control/cmd_vel_topic" value="$(arg cmd_vel_topic)"/>
+
+    <!-- start gazebo -->
+    <include file="$(find gazebo_ros)/launch/empty_world.launch"/>
+
+    <!-- spawn the quadrotors -->
+    <include file="$(find viscap_gazebo)/launch/spawn_quadrotor.launch">
+        <arg name="id" value="1"/>
+        <arg name="x" value="$(arg quadrotor_1_x)"/>
+        <arg name="y" value="$(arg quadrotor_1_y)"/>
+        <arg name="z" value="$(arg quadrotor_1_z)"/>
+        <arg name="R" value="$(arg quadrotor_1_R)"/>
+        <arg name="P" value="$(arg quadrotor_1_P)"/>
+        <arg name="Y" value="$(arg quadrotor_1_Y)"/>
+    </include>
+    <include file="$(find viscap_gazebo)/launch/spawn_quadrotor.launch">
+        <arg name="id" value="2"/>
+        <arg name="x" value="$(arg quadrotor_2_x)"/>
+        <arg name="y" value="$(arg quadrotor_2_y)"/>
+        <arg name="z" value="$(arg quadrotor_2_z)"/>
+        <arg name="R" value="$(arg quadrotor_2_R)"/>
+        <arg name="P" value="$(arg quadrotor_2_P)"/>
+        <arg name="Y" value="$(arg quadrotor_2_Y)"/>
+    </include>
+    <include file="$(find viscap_gazebo)/launch/spawn_quadrotor.launch">
+        <arg name="id" value="3"/>
+        <arg name="x" value="$(arg quadrotor_3_x)"/>
+        <arg name="y" value="$(arg quadrotor_3_y)"/>
+        <arg name="z" value="$(arg quadrotor_3_z)"/>
+        <arg name="R" value="$(arg quadrotor_3_R)"/>
+        <arg name="P" value="$(arg quadrotor_3_P)"/>
+        <arg name="Y" value="$(arg quadrotor_3_Y)"/>
+    </include>
+
+
+    <group ns="quadrotor_1">
+        <param name="uav_id" value="1"/>
+        <param name="tf_frame" value="uav1/base_link"/>
+        <param name="x" value="$(arg quadrotor_1_x)"/>
+        <param name="y" value="$(arg quadrotor_1_y)"/>
+        <param name="z" value="$(arg quadrotor_1_z)"/>
+        <param name="R" value="$(arg quadrotor_1_R)"/>
+        <param name="P" value="$(arg quadrotor_1_P)"/>
+        <param name="Y" value="$(arg quadrotor_1_Y)"/>
+
+        <node pkg="uav_swarm_control" type="swarm_controller_node" name="swarm_controller_node" output="screen" />
+    </group>
+
+    <group ns="quadrotor_2">
+        <param name="uav_id" value="2" />
+        <param name="tf_frame" value="uav2/base_link"/>
+        <param name="x" value="$(arg quadrotor_2_x)"/>
+        <param name="y" value="$(arg quadrotor_2_y)"/>
+        <param name="z" value="$(arg quadrotor_2_z)"/>
+        <param name="R" value="$(arg quadrotor_2_R)"/>
+        <param name="P" value="$(arg quadrotor_2_P)"/>
+        <param name="Y" value="$(arg quadrotor_2_Y)"/>
+
+        <node pkg="uav_swarm_control" type="swarm_controller_node" name="swarm_controller_node" output="screen" />
+    </group>
+
+    <group ns="quadrotor_3">
+        <param name="uav_id" value="3" />
+        <param name="tf_frame" value="uav3/base_link"/>
+        <param name="x" value="$(arg quadrotor_3_x)"/>
+        <param name="y" value="$(arg quadrotor_3_y)"/>
+        <param name="z" value="$(arg quadrotor_3_z)"/>
+        <param name="R" value="$(arg quadrotor_3_R)"/>
+        <param name="P" value="$(arg quadrotor_3_P)"/>
+        <param name="Y" value="$(arg quadrotor_3_Y)"/>
+
+        <node pkg="uav_swarm_control" type="swarm_controller_node" name="swarm_controller_node" output="screen" />
+    </group>
+
+
+
+</launch>

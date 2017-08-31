@@ -27,7 +27,7 @@
 
 #define PI 3.14159265
 
-#define MAXVEL   1.0
+#define MAXVEL   5.0
 
 #define VISION_DISTANCE 20.0
 
@@ -94,7 +94,7 @@ private:
   void enableControlCb( const std_msgs::BoolConstPtr &msg );
   void uavsOdomCb( const uav_swarm_msgs::OdometryWithUavIdConstPtr &msg );
   void publishUavOdom ();
-  void publishVelocity( double velX, double velY );
+  void publishVelocity( double velX, double velY, double velZ );
   void publishVectors( const tf::Vector3 &v1, const tf::Vector3 &v2, const tf::Vector3 &v3,
                        const tf::Vector3 &v4, const tf::Vector3 &vRes );
 

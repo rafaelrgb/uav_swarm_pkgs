@@ -109,7 +109,7 @@ void SwarmControllerNode::controlLoop()
         tf::Vector3 vResTransformed;
         vResTransformed.setValue(stamped_out.vector.x, stamped_out.vector.y, stamped_out.vector.z);
 
-        publishVelocity( vResTransformed.getX(), vResTransformed.getY() );
+        publishVelocity( vResTransformed.getX(), vResTransformed.getY(), vResTransformed.getZ() );
     }
 
     publishUavOdom();
@@ -160,7 +160,7 @@ void SwarmControllerNode::publishUavOdom()
     uav_odom_pub_.publish(msg);
 }
 
-void SwarmControllerNode::publishVelocity( double velX, double velY )
+void SwarmControllerNode::publishVelocity( double velX, double velY, double velZ )
 {
     //geometry_msgs::TwistStamped msg;
     geometry_msgs::Twist msg;
@@ -169,6 +169,7 @@ void SwarmControllerNode::publishVelocity( double velX, double velY )
     //msg.twist.linear.y = velY;
     msg.linear.x = velX;
     msg.linear.y = velY;
+    msg.linear.z = velZ;
 
     cmd_vel_pub_.publish(msg);
 }
