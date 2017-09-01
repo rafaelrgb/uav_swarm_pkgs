@@ -17,19 +17,17 @@
 #include <nav_msgs/Odometry.h>
 #include <sensor_msgs/NavSatFix.h>
 #include <geometry_msgs/Point.h>
-#include <geometry_msgs/Pose.h>
-#include <geometry_msgs/PoseArray.h>
 #include <geometry_msgs/TwistStamped.h>
+#include <geometry_msgs/Twist.h>
+#include <geometry_msgs/Vector3Stamped.h>
 #include <std_msgs/Bool.h>
 #include <uav_swarm_msgs/OdometryWithUavId.h>
 #include <tf/transform_broadcaster.h>
 #include <tf/transform_listener.h>
+#include <geometry_msgs/Pose.h>
+#include <geometry_msgs/PoseArray.h>
 
 #define PI 3.14159265
-
-#define MAXVEL   1.0
-
-#define VISION_DISTANCE 3.0
 
 namespace uav_swarm_control
 {
@@ -43,13 +41,20 @@ public:
 private:
   virtual void controlLoop();
 
-  // UAV id
+  // UAV params
+  bool simulation_;
   int id_;
+  double max_vel_;
+  double vision_distance_;
+  std::string fix_topic_;
+  std::string odom_topic_;
+  std::string cmd_vel_topic_;
+  std::string tf_frame_;
 
   // Differences from current position to origin
   double dx_;
   double dy_;
-  bool initialDeltasCalculated_;
+  double dz_;
 
   // Enable control
   bool enableControl_;
@@ -76,6 +81,7 @@ private:
   ros::Publisher uav_odom_pub_;          // UAV odom publisher
   ros::Publisher cmd_vel_pub_;           // Velocity publisher
   tf::TransformBroadcaster pose_br_;
+  tf::TransformListener listener_;
 
   ros::Publisher v1_pub_;
   ros::Publisher v2_pub_;
@@ -91,7 +97,7 @@ private:
   void enableControlCb( const std_msgs::BoolConstPtr &msg );
   void uavsOdomCb( const uav_swarm_msgs::OdometryWithUavIdConstPtr &msg );
   void publishUavOdom ();
-  void publishVelocity( double velX, double velY );
+  void publishVelocity( double velX, double velY, double velZ );
   void publishVectors( const tf::Vector3 &v1, const tf::Vector3 &v2, const tf::Vector3 &v3,
                        const tf::Vector3 &v4, const tf::Vector3 &vRes );
 

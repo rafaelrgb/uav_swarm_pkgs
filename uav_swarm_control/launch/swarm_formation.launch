@@ -89,7 +89,7 @@
         <param name="P" value="$(arg quadrotor_1_P)"/>
         <param name="Y" value="$(arg quadrotor_1_Y)"/>
 
-        <node pkg="uav_swarm_control" type="swarm_controller_node" name="swarm_controller_node" output="screen" />
+        <node pkg="uav_swarm_control" type="formation_controller_node" name="formation_controller_node" output="screen" />
     </group>
 
     <group ns="quadrotor_2">
@@ -102,7 +102,7 @@
         <param name="P" value="$(arg quadrotor_2_P)"/>
         <param name="Y" value="$(arg quadrotor_2_Y)"/>
 
-        <node pkg="uav_swarm_control" type="swarm_controller_node" name="swarm_controller_node" output="screen" />
+        <node pkg="uav_swarm_control" type="formation_controller_node" name="formation_controller_node" output="screen" />
     </group>
 
     <group ns="quadrotor_3">
@@ -115,7 +115,7 @@
         <param name="P" value="$(arg quadrotor_3_P)"/>
         <param name="Y" value="$(arg quadrotor_3_Y)"/>
 
-        <node pkg="uav_swarm_control" type="swarm_controller_node" name="swarm_controller_node" output="screen" />
+        <node pkg="uav_swarm_control" type="formation_controller_node" name="formation_controller_node" output="screen" />
     </group>
 
 

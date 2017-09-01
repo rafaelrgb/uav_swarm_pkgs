@@ -1,18 +1,5 @@
 <launch>
 
-    <!-- arguments that can be passed by the command line or read from a file -->
-    <arg name="simulation" default="true"/>
-    <arg name="origin_lat" default="49.9"/>
-    <arg name="origin_lon" default="8.9"/>
-    <arg name="fix_topic" default="fix"/>
-    <arg name="odom_topic" default="ground_truth/state"/>
-    <arg name="cmd_vel_topic" default="cmd_vel"/>
-    <arg name="max_vel" default="5.0"/>
-    <arg name="vision_distance" default="20.0"/>
-    <arg name="r1" default="0.1"/>
-    <arg name="r2" default="0.1"/>
-    <arg name="r3" default="0.0"/>
-    <arg name="r4" default="1.0"/>
     <arg name="quadrotor_1_x" default="-5.0"/>
     <arg name="quadrotor_1_y" default="-5.0"/>
     <arg name="quadrotor_1_z" default="2.0"/>
@@ -32,19 +19,7 @@
     <arg name="quadrotor_3_P" default="0.0"/>
     <arg name="quadrotor_3_Y" default="0.0"/>
 
-    <!-- global parameters -->
-    <param name="/uav_swarm_control/simulation" value="$(arg simulation)" />
-    <param name="/uav_swarm_control/origin_lat" value="$(arg origin_lat)" />
-    <param name="/uav_swarm_control/origin_lon" value="$(arg origin_lon)" />
-    <param name="/uav_swarm_control/fix_topic" value="$(arg fix_topic)"/>
-    <param name="/uav_swarm_control/odom_topic" value="$(arg odom_topic)"/>
-    <param name="/uav_swarm_control/cmd_vel_topic" value="$(arg cmd_vel_topic)"/>
-    <param name="/uav_swarm_control/max_vel" value="$(arg max_vel)"/>
-    <param name="/uav_swarm_control/vision_distance" value="$(arg vision_distance)"/>
-    <param name="/uav_swarm_control/r1" value="$(arg r1)"/>
-    <param name="/uav_swarm_control/r2" value="$(arg r2)"/>
-    <param name="/uav_swarm_control/r3" value="$(arg r3)"/>
-    <param name="/uav_swarm_control/r4" value="$(arg r4)"/>
+    <rosparam command="load" file="$(find uav_swarm_control)/params.yaml" />
 
     <!-- start gazebo -->
     <include file="$(find gazebo_ros)/launch/empty_world.launch"/>
@@ -80,8 +55,6 @@
 
 
     <group ns="quadrotor_1">
-        <param name="uav_id" value="1"/>
-        <param name="tf_frame" value="uav1/base_link"/>
         <param name="x" value="$(arg quadrotor_1_x)"/>
         <param name="y" value="$(arg quadrotor_1_y)"/>
         <param name="z" value="$(arg quadrotor_1_z)"/>
@@ -93,8 +66,6 @@
     </group>
 
     <group ns="quadrotor_2">
-        <param name="uav_id" value="2" />
-        <param name="tf_frame" value="uav2/base_link"/>
         <param name="x" value="$(arg quadrotor_2_x)"/>
         <param name="y" value="$(arg quadrotor_2_y)"/>
         <param name="z" value="$(arg quadrotor_2_z)"/>
@@ -106,8 +77,6 @@
     </group>
 
     <group ns="quadrotor_3">
-        <param name="uav_id" value="3" />
-        <param name="tf_frame" value="uav3/base_link"/>
         <param name="x" value="$(arg quadrotor_3_x)"/>
         <param name="y" value="$(arg quadrotor_3_y)"/>
         <param name="z" value="$(arg quadrotor_3_z)"/>

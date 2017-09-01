@@ -19,14 +19,18 @@ SwarmControllerNode::SwarmControllerNode(ros::NodeHandle *nh)
 {
     enableControl_ = false;
     migrationPoint_.setValue( 0.0, 0.0, 0.0 );
-    r1_ = 0.1;
-    r2_ = 0.1;
-    r3_ = 0.0;
-    r4_ = 1.0;
+
     ros::param::get("/uav_swarm_control/simulation", simulation_);
     ros::param::get("/uav_swarm_control/fix_topic", fix_topic_);
     ros::param::get("/uav_swarm_control/odom_topic", odom_topic_);
     ros::param::get("/uav_swarm_control/cmd_vel_topic", cmd_vel_topic_);
+    ros::param::get("/uav_swarm_control/max_vel", max_vel_);
+    ros::param::get("/uav_swarm_control/vision_distance_", vision_distance_);
+    ros::param::get("/uav_swarm_control/r1", r1_);
+    ros::param::get("/uav_swarm_control/r2", r2_);
+    ros::param::get("/uav_swarm_control/r3", r3_);
+    ros::param::get("/uav_swarm_control/r4", r4_);
+
     ros::param::get("uav_id", id_);
     ros::param::get("tf_frame", tf_frame_);
     ros::param::get("x", dx_);
@@ -83,10 +87,10 @@ void SwarmControllerNode::controlLoop()
 
     // Limit vRes
     double norm = vRes.length();
-    if ( norm >= MAXVEL )
+    if ( norm >= max_vel_ )
     {
         vRes.normalize();
-        vRes *= MAXVEL;
+        vRes *= max_vel_;
     }
 
     // Publish velocity for diagnostics purpose
@@ -388,10 +392,10 @@ void SwarmControllerNode::rule2( tf::Vector3& v )
 
                 double d = thisPosition.distance( neighborPosition );
 
-                if ( d < VISION_DISTANCE )
+                if ( d < vision_distance_ )
                 {
                     if ( d < 0.01 ) d = 0.1;
-                    double dif = VISION_DISTANCE - d;
+                    double dif = vision_distance_ - d;
 
                     thisPosition -= neighborPosition;
                     thisPosition /= d;
@@ -452,7 +456,7 @@ void SwarmControllerNode::rule4( tf::Vector3& v )
     if ( v.length() > 0.01 )
     {
         v.normalize();
-        v *= MAXVEL;
+        v *= max_vel_;
     }
     */
 }

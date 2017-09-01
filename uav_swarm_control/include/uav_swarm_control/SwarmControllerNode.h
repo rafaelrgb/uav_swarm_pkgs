@@ -27,10 +27,6 @@
 
 #define PI 3.14159265
 
-#define MAXVEL   5.0
-
-#define VISION_DISTANCE 20.0
-
 namespace uav_swarm_control
 {
 
@@ -46,6 +42,8 @@ private:
   // UAV params
   bool simulation_;
   int id_;
+  double max_vel_;
+  double vision_distance_;
   std::string fix_topic_;
   std::string odom_topic_;
   std::string cmd_vel_topic_;

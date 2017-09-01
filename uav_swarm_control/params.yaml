@@ -1,0 +1,23 @@
+uav_swarm_control:
+  simulation: true
+  origin_lat: 49.9
+  origin_lon: 8.9
+  fix_topic: fix
+  odom_topic: ground_truth/state
+  cmd_vel_topic: cmd_vel
+  max_vel: 5.0
+  vision_distance: 20.0
+  r1: 0.1
+  r2: 0.1
+  r3: 0.0
+  r4: 1.0
+
+quadrotor_1:
+  tf_frame: uav1/base_link
+  uav_id: 1
+quadrotor_2:
+  tf_frame: uav2/base_link
+  uav_id: 2
+quadrotor_3:
+  tf_frame: uav3/base_link
+  uav_id: 3

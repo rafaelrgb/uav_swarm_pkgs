@@ -7,6 +7,12 @@
     <arg name="fix_topic" default="fix"/>
     <arg name="odom_topic" default="ground_truth/state"/>
     <arg name="cmd_vel_topic" default="cmd_vel"/>
+    <arg name="max_vel" default="5.0"/>
+    <arg name="vision_distance" default="20.0"/>
+    <arg name="r1" default="0.1"/>
+    <arg name="r2" default="0.1"/>
+    <arg name="r3" default="0.0"/>
+    <arg name="r4" default="1.0"/>
     <arg name="quadrotor_1_x" default="-5.0"/>
     <arg name="quadrotor_1_y" default="-5.0"/>
     <arg name="quadrotor_1_z" default="2.0"/>
@@ -82,6 +88,12 @@
     <param name="/uav_swarm_control/fix_topic" value="$(arg fix_topic)"/>
     <param name="/uav_swarm_control/odom_topic" value="$(arg odom_topic)"/>
     <param name="/uav_swarm_control/cmd_vel_topic" value="$(arg cmd_vel_topic)"/>
+    <param name="/uav_swarm_control/max_vel" value="$(arg max_vel)"/>
+    <param name="/uav_swarm_control/vision_distance" value="$(arg vision_distance)"/>
+    <param name="/uav_swarm_control/r1" value="$(arg r1)"/>
+    <param name="/uav_swarm_control/r2" value="$(arg r2)"/>
+    <param name="/uav_swarm_control/r3" value="$(arg r3)"/>
+    <param name="/uav_swarm_control/r4" value="$(arg r4)"/>
 
     <!-- start gazebo -->
     <include file="$(find gazebo_ros)/launch/empty_world.launch"/>

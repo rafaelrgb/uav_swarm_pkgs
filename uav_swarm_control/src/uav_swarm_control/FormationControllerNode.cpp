@@ -18,10 +18,24 @@ FormationControllerNode::FormationControllerNode(ros::NodeHandle *nh)
   : Node(nh, 10)
 {
     enableControl_ = false;
-    dx_ = 0.0;
-    dy_ = 0.0;
-    initialDeltasCalculated_ = false;
     migrationPoint_.setValue( 0.0, 0.0, 0.0 );
+
+    ros::param::get("/uav_swarm_control/simulation", simulation_);
+    ros::param::get("/uav_swarm_control/fix_topic", fix_topic_);
+    ros::param::get("/uav_swarm_control/odom_topic", odom_topic_);
+    ros::param::get("/uav_swarm_control/cmd_vel_topic", cmd_vel_topic_);
+    ros::param::get("/uav_swarm_control/max_vel", max_vel_);
+    ros::param::get("/uav_swarm_control/vision_distance_", vision_distance_);
+    ros::param::get("/uav_swarm_control/r1", r1_);
+    ros::param::get("/uav_swarm_control/r2", r2_);
+    ros::param::get("/uav_swarm_control/r3", r3_);
+    ros::param::get("/uav_swarm_control/r4", r4_);
+
+    ros::param::get("uav_id", id_);
+    ros::param::get("tf_frame", tf_frame_);
+    ros::param::get("x", dx_);
+    ros::param::get("y", dy_);
+    ros::param::get("z", dz_);
 
     formation_.position.x = 0.0;
     formation_.position.y = 0.0;
@@ -31,21 +45,15 @@ FormationControllerNode::FormationControllerNode(ros::NodeHandle *nh)
     formation_.orientation.z = 0.0;
     formation_.orientation.w = 1.0;
 
-    r1_ = 0.0;
-    r2_ = 5.0;
-    r3_ = 0.0;
-    r4_ = 1.0;
-    ros::param::get("uav_id", id_);
-
     migration_point_sub_ = nh->subscribe("/migration_point", 1, &FormationControllerNode::migrationPointCb, this);
     formation_points_sub_ = nh->subscribe("/formation_points", 1, &FormationControllerNode::formationPointsCb, this);
-    global_position_sub_ = nh->subscribe("mavros/global_position/global", 1, &FormationControllerNode::globalPositionCb, this);
-    odom_sub_ = nh->subscribe("mavros/local_position/odom", 1, &FormationControllerNode::odomCb, this);
+    global_position_sub_ = nh->subscribe(fix_topic_, 1, &FormationControllerNode::globalPositionCb, this);
+    odom_sub_ = nh->subscribe(odom_topic_, 1, &FormationControllerNode::odomCb, this);
     enable_control_sub_ = nh->subscribe("/enable_control", 1, &FormationControllerNode::enableControlCb, this);
     uavs_odom_sub_ = nh->subscribe("/uavs_odom", 10, &FormationControllerNode::uavsOdomCb, this);
     uav_odom_pub_ = nh->advertise<uav_swarm_msgs::OdometryWithUavId>("/uavs_odom", 10);
-    cmd_vel_pub_ = nh->advertise<geometry_msgs::TwistStamped>("mavros/setpoint_velocity/cmd_vel", 10);
-
+    //cmd_vel_pub_ = nh->advertise<geometry_msgs::TwistStamped>(cmd_vel_topic_, 10);
+    cmd_vel_pub_ = nh->advertise<geometry_msgs::Twist>(cmd_vel_topic_, 10);
 
     v1_pub_ = nh->advertise<geometry_msgs::Point>("v1", 10);
     v2_pub_ = nh->advertise<geometry_msgs::Point>("v2", 10);
@@ -88,10 +96,10 @@ void FormationControllerNode::controlLoop()
 
     // Limit vRes
     double norm = vRes.length();
-    if ( norm >= MAXVEL )
+    if ( norm >= max_vel_ )
     {
         vRes.normalize();
-        vRes *= MAXVEL;
+        vRes *= max_vel_;
     }
 
     // Publish velocity for diagnostics purpose
@@ -100,7 +108,21 @@ void FormationControllerNode::controlLoop()
     // PUBLISH VELOCITY
     if ( enableControl_ == true )
     {
-        publishVelocity( vRes.getX(), vRes.getY() );
+        // Transform vRes into the quadrotor's base frame
+        geometry_msgs::Vector3Stamped stamped_in, stamped_out;
+
+        stamped_in.header.frame_id = "/map";
+        stamped_in.vector.x = vRes.getX();
+        stamped_in.vector.y = vRes.getY();
+        stamped_in.vector.z = vRes.getZ();
+
+        listener_.transformVector(tf_frame_, stamped_in, stamped_out);
+
+        // Retrieve the data from stamped_out and publish it
+        tf::Vector3 vResTransformed;
+        vResTransformed.setValue(stamped_out.vector.x, stamped_out.vector.y, stamped_out.vector.z);
+
+        publishVelocity( vResTransformed.getX(), vResTransformed.getY(), vResTransformed.getZ() );
     }
 
     publishUavOdom();
@@ -147,12 +169,16 @@ void FormationControllerNode::publishUavOdom()
     uav_odom_pub_.publish(msg);
 }
 
-void FormationControllerNode::publishVelocity( double velX, double velY )
+void FormationControllerNode::publishVelocity( double velX, double velY, double velZ )
 {
-    geometry_msgs::TwistStamped msg;
+    //geometry_msgs::TwistStamped msg;
+    geometry_msgs::Twist msg;
 
-    msg.twist.linear.x = velX;
-    msg.twist.linear.y = velY;
+    //msg.twist.linear.x = velX;
+    //msg.twist.linear.y = velY;
+    msg.linear.x = velX;
+    msg.linear.y = velY;
+    msg.linear.z = velZ;
 
     cmd_vel_pub_.publish(msg);
 }
@@ -207,7 +233,7 @@ void FormationControllerNode::formationPointsCb(const geometry_msgs::PoseArrayCo
 void FormationControllerNode::globalPositionCb( const sensor_msgs::NavSatFix &msg )
 {
     // Quando a primeira mensagem de GPS chegar, calcular dx_ e dy_
-    if ( !initialDeltasCalculated_ )
+    /*if ( !initialDeltasCalculated_ )
     {
         double originLat, originLon;
         ros::param::get("/uav_swarm_control/origin_lat", originLat);
@@ -219,15 +245,25 @@ void FormationControllerNode::globalPositionCb( const sensor_msgs::NavSatFix &ms
         if ( (lon - originLon) < 0 ) dx_ *= -1;
         if ( (lat - originLat) < 0 ) dy_ *= -1;
         initialDeltasCalculated_ = true;
-    }
+    }*/
 }
 
 void FormationControllerNode::odomCb( const nav_msgs::OdometryConstPtr &msg )
 {
     // Get UAV odometry from the received message
-    odom_.pose.pose.position.x = msg->pose.pose.position.x + dx_;
-    odom_.pose.pose.position.y = msg->pose.pose.position.y + dy_;
-    odom_.pose.pose.position.z = msg->pose.pose.position.z;
+    // If ground truth data from the simulation is being used, ignore the deltas
+    if (simulation_)
+    {
+      odom_.pose.pose.position.x = msg->pose.pose.position.x;
+      odom_.pose.pose.position.y = msg->pose.pose.position.y;
+      odom_.pose.pose.position.z = msg->pose.pose.position.z;
+    }
+    else
+    {
+      odom_.pose.pose.position.x = msg->pose.pose.position.x + dx_;
+      odom_.pose.pose.position.y = msg->pose.pose.position.y + dy_;
+      odom_.pose.pose.position.z = msg->pose.pose.position.z + dz_;
+    }
     odom_.pose.pose.orientation.x = msg->pose.pose.orientation.x;
     odom_.pose.pose.orientation.y = msg->pose.pose.orientation.y;
     odom_.pose.pose.orientation.z = msg->pose.pose.orientation.z;
@@ -237,8 +273,6 @@ void FormationControllerNode::odomCb( const nav_msgs::OdometryConstPtr &msg )
     odom_.twist.twist.linear.z = msg->twist.twist.linear.z;
 
     // Publish to tf
-    std::stringstream ss;
-    ss << "/uav" << id_ << "/base_link";
     pose_br_.sendTransform(
         tf::StampedTransform(
             tf::Transform(
@@ -253,7 +287,7 @@ void FormationControllerNode::odomCb( const nav_msgs::OdometryConstPtr &msg )
                     odom_.pose.pose.position.y,
                     odom_.pose.pose.position.z
                 )
-            ), ros::Time::now(), "world", ss.str()
+            ), ros::Time::now(), "map", tf_frame_
         )
     );
 }
@@ -375,10 +409,10 @@ void FormationControllerNode::rule2( tf::Vector3& v )
 
                 double d = thisPosition.distance( neighborPosition );
 
-                if ( d < VISION_DISTANCE )
+                if ( d < vision_distance_ )
                 {
                     if ( d < 0.01 ) d = 0.1;
-                    double dif = VISION_DISTANCE - d;
+                    double dif = vision_distance_ - d;
 
                     thisPosition -= neighborPosition;
                     thisPosition /= d;
