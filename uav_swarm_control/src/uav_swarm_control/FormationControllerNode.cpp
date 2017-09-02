@@ -148,6 +148,12 @@ void FormationControllerNode::controlLoop()
             }
         }
     }*/
+
+    // TESTE: Imprimir as informações do drone
+    ROS_INFO_STREAM("Eu sou o quadrotor " << id_ << "\n"
+                      << "Minha posicao e: x = " << odom_.pose.pose.position.x << ", y = " << odom_.pose.pose.position.y << ", z = " << odom_.pose.pose.position.z << "\n"
+                      << "Meu migration point e: x = " << migrationPoint_.getX() << ", y = " << migrationPoint_.getY() << ", z = " << migrationPoint_.getZ() << "\n"
+                      << "Minha pose na formacao e: " << formation_.position.x << ", y = " << formation_.position.y << ", z = " << formation_.position.z << "\n");
 }
 
 void FormationControllerNode::publishUavOdom()
@@ -212,7 +218,7 @@ void FormationControllerNode::publishVectors( const tf::Vector3 &v1, const tf::V
 void FormationControllerNode::migrationPointCb( const geometry_msgs::PointConstPtr &msg )
 {
     migrationPoint_.setX( msg->x );
-    migrationPoint_.setX( msg->y );
+    migrationPoint_.setY( msg->y );
     migrationPoint_.setZ( msg->z );
 }
 
@@ -220,13 +226,13 @@ void FormationControllerNode::formationPointsCb(const geometry_msgs::PoseArrayCo
 {
     if ( msg->poses.size() > id_ )
     {
-        formation_.position.x = msg->poses[id_].position.x;
-        formation_.position.y = msg->poses[id_].position.y;
-        formation_.position.z = msg->poses[id_].position.z;
-        formation_.orientation.x = msg->poses[id_].orientation.x;
-        formation_.orientation.y = msg->poses[id_].orientation.y;
-        formation_.orientation.z = msg->poses[id_].orientation.z;
-        formation_.orientation.w = msg->poses[id_].orientation.w;
+        formation_.position.x = msg->poses[id_ - 1].position.x;
+        formation_.position.y = msg->poses[id_ - 1].position.y;
+        formation_.position.z = msg->poses[id_ - 1].position.z;
+        formation_.orientation.x = msg->poses[id_ - 1].orientation.x;
+        formation_.orientation.y = msg->poses[id_ - 1].orientation.y;
+        formation_.orientation.z = msg->poses[id_ - 1].orientation.z;
+        formation_.orientation.w = msg->poses[id_ - 1].orientation.w;
     }
 }
 
@@ -469,13 +475,13 @@ void FormationControllerNode::rule4( tf::Vector3& v )
 
     if ( n > 0 )
     {
-        if ( id_ != 0 )
+        if ( id_ != 1 )
         {
             // Move according to leader
             tf::Vector3 leader( 0.0, 0.0, 0.0 );
             for ( int i(0); i < n; i++ )
             {
-                if ( neighbors_[i].id == 0 )
+                if ( neighbors_[i].id == 1 )
                 {
                     leader.setX( neighbors_[i].odom.pose.pose.position.x );
                     leader.setY( neighbors_[i].odom.pose.pose.position.y );
