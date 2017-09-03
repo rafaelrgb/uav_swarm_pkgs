@@ -1,6 +1,8 @@
 <launch>
 
     <!-- arguments that can be passed by the command line or read from a file -->
+    <arg name="record_position" default="false"/>
+    <arg name="leader_follower" default="true"/>
     <arg name="simulation" default="true"/>
     <arg name="origin_lat" default="49.9"/>
     <arg name="origin_lon" default="8.9"/>
@@ -8,31 +10,40 @@
     <arg name="odom_topic" default="ground_truth/state"/>
     <arg name="cmd_vel_topic" default="cmd_vel"/>
     <arg name="max_vel" default="5.0"/>
-    <arg name="vision_distance" default="20.0"/>
-    <arg name="r1" default="0.1"/>
-    <arg name="r2" default="0.1"/>
+    <arg name="vision_distance" default="5.0"/>
+    <arg name="r1" default="0.0"/>
+    <arg name="r2" default="2.0"/>
     <arg name="r3" default="0.0"/>
-    <arg name="r4" default="1.0"/>
-    <arg name="quadrotor_1_x" default="-5.0"/>
-    <arg name="quadrotor_1_y" default="-5.0"/>
+    <arg name="r4" default="0.8"/>
+    <arg name="model" default="$(find viscap_gazebo)/urdf/quadrotor.urdf.xacro"/>
+    <arg name="quadrotor_1_x" default="0.0"/>
+    <arg name="quadrotor_1_y" default="2.5"/>
     <arg name="quadrotor_1_z" default="2.0"/>
     <arg name="quadrotor_1_R" default="0.0"/>
     <arg name="quadrotor_1_P" default="0.0"/>
     <arg name="quadrotor_1_Y" default="0.0"/>
     <arg name="quadrotor_2_x" default="0.0"/>
-    <arg name="quadrotor_2_y" default="0.0"/>
+    <arg name="quadrotor_2_y" default="-2.5"/>
     <arg name="quadrotor_2_z" default="2.0"/>
     <arg name="quadrotor_2_R" default="0.0"/>
     <arg name="quadrotor_2_P" default="0.0"/>
     <arg name="quadrotor_2_Y" default="0.0"/>
-    <arg name="quadrotor_3_x" default="5.0"/>
-    <arg name="quadrotor_3_y" default="5.0"/>
+    <arg name="quadrotor_3_x" default="0.0"/>
+    <arg name="quadrotor_3_y" default="7.5"/>
     <arg name="quadrotor_3_z" default="2.0"/>
     <arg name="quadrotor_3_R" default="0.0"/>
     <arg name="quadrotor_3_P" default="0.0"/>
     <arg name="quadrotor_3_Y" default="0.0"/>
+    <arg name="quadrotor_4_x" default="0.0"/>
+    <arg name="quadrotor_4_y" default="-7.5"/>
+    <arg name="quadrotor_4_z" default="2.0"/>
+    <arg name="quadrotor_4_R" default="0.0"/>
+    <arg name="quadrotor_4_P" default="0.0"/>
+    <arg name="quadrotor_4_Y" default="0.0"/>
+
 
     <!-- global parameters -->
+    <param name="/uav_swarm_control/leader_follower" value="$(arg leader_follower)" />
     <param name="/uav_swarm_control/simulation" value="$(arg simulation)" />
     <param name="/uav_swarm_control/origin_lat" value="$(arg origin_lat)" />
     <param name="/uav_swarm_control/origin_lon" value="$(arg origin_lon)" />
@@ -47,7 +58,7 @@
     <param name="/uav_swarm_control/r4" value="$(arg r4)"/>
 
     <!-- start gazebo -->
-    <include file="$(find gazebo_ros)/launch/empty_world.launch"/>
+    <include file="$(find gazebo_ros)/launch/empty_world.launch" />
 
     <!-- spawn the quadrotors -->
     <include file="$(find viscap_gazebo)/launch/spawn_quadrotor.launch">
@@ -58,6 +69,7 @@
         <arg name="R" value="$(arg quadrotor_1_R)"/>
         <arg name="P" value="$(arg quadrotor_1_P)"/>
         <arg name="Y" value="$(arg quadrotor_1_Y)"/>
+        <arg name="model" value="$(arg model)"/>
     </include>
     <include file="$(find viscap_gazebo)/launch/spawn_quadrotor.launch">
         <arg name="id" value="2"/>
@@ -67,6 +79,7 @@
         <arg name="R" value="$(arg quadrotor_2_R)"/>
         <arg name="P" value="$(arg quadrotor_2_P)"/>
         <arg name="Y" value="$(arg quadrotor_2_Y)"/>
+        <arg name="model" value="$(arg model)"/>
     </include>
     <include file="$(find viscap_gazebo)/launch/spawn_quadrotor.launch">
         <arg name="id" value="3"/>
@@ -76,6 +89,17 @@
         <arg name="R" value="$(arg quadrotor_3_R)"/>
         <arg name="P" value="$(arg quadrotor_3_P)"/>
         <arg name="Y" value="$(arg quadrotor_3_Y)"/>
+        <arg name="model" value="$(arg model)"/>
+    </include>
+    <include file="$(find viscap_gazebo)/launch/spawn_quadrotor.launch">
+        <arg name="id" value="4"/>
+        <arg name="x" value="$(arg quadrotor_4_x)"/>
+        <arg name="y" value="$(arg quadrotor_4_y)"/>
+        <arg name="z" value="$(arg quadrotor_4_z)"/>
+        <arg name="R" value="$(arg quadrotor_4_R)"/>
+        <arg name="P" value="$(arg quadrotor_4_P)"/>
+        <arg name="Y" value="$(arg quadrotor_4_Y)"/>
+        <arg name="model" value="$(arg model)"/>
     </include>
 
 
@@ -91,7 +115,6 @@
 
         <node pkg="uav_swarm_control" type="formation_controller_node" name="formation_controller_node" output="screen" />
     </group>
-
     <group ns="quadrotor_2">
         <param name="uav_id" value="2" />
         <param name="tf_frame" value="uav2/base_link"/>
@@ -104,7 +127,6 @@
 
         <node pkg="uav_swarm_control" type="formation_controller_node" name="formation_controller_node" output="screen" />
     </group>
-
     <group ns="quadrotor_3">
         <param name="uav_id" value="3" />
         <param name="tf_frame" value="uav3/base_link"/>
@@ -117,7 +139,32 @@
 
         <node pkg="uav_swarm_control" type="formation_controller_node" name="formation_controller_node" output="screen" />
     </group>
+    <group ns="quadrotor_4">
+        <param name="uav_id" value="4" />
+        <param name="tf_frame" value="uav4/base_link"/>
+        <param name="x" value="$(arg quadrotor_4_x)"/>
+        <param name="y" value="$(arg quadrotor_4_y)"/>
+        <param name="z" value="$(arg quadrotor_4_z)"/>
+        <param name="R" value="$(arg quadrotor_4_R)"/>
+        <param name="P" value="$(arg quadrotor_4_P)"/>
+        <param name="Y" value="$(arg quadrotor_4_Y)"/>
+
+        <node pkg="uav_swarm_control" type="formation_controller_node" name="formation_controller_node" output="screen" />
+    </group>
 
 
+    <node pkg="uav_swarm_control" type="odom_to_pose_converser" name="conversor" if="$(arg record_position)" />
+
+    <node pkg="rosbag" type="record" name="record_uav_positions"
+        args="record -o $(find uav_swarm_control)/bagfiles/imav/imav
+            /quadrotor_1/pose /quadrotor_2/pose /quadrotor_3/pose /quadrotor_4/pose
+            /migration_point /formation_points /enable_control"
+        if="$(arg record_position)" />
+
+
+    <node pkg="uav_swarm_control" type="migration_point_publisher" name="migration_point_publisher" output="screen" />
+
+    <!-- Run RVIZ-->
+    <!--node name="$(anon rviz)" pkg="rviz" type="rviz" args="-d $(find uav_swarm_control)/uav_swarm_formation.rviz" /-->
 
 </launch>

@@ -1,0 +1,29 @@
+<?xml version="1.0" ?>
+<sdf version="1.5">
+  <world name="formation">
+
+    <!-- place user camera -->
+    <gui>
+      <camera name="user_camera">
+	<pose>1,434517 -27,875301 15,707819 -0,000001 0,551999 1,556001</pose>
+      </camera>
+    </gui>
+
+    <!-- A global light source -->
+    <include>
+      <uri>model://sun</uri>
+    </include>
+    <!-- A ground plane -->
+    <include>
+      <uri>model://ground_plane</uri>
+    </include>
+  </world>
+</sdf>
+
+
+
+
+
+
+
+

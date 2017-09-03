@@ -57,3 +57,11 @@ target_link_libraries(formation_controller_node ${catkin_LIBRARIES})
 add_executable(pose_publisher src/pose_publisher.cpp ${CPP_FILES})
 add_dependencies(pose_publisher ${catkin_EXPORTED_TARGETS})
 target_link_libraries(pose_publisher ${catkin_LIBRARIES})
+
+add_executable(migration_point_publisher src/migration_point_publisher.cpp ${CPP_FILES})
+add_dependencies(migration_point_publisher ${catkin_EXPORTED_TARGETS})
+target_link_libraries(migration_point_publisher ${catkin_LIBRARIES})
+
+add_executable(odom_to_pose_converser src/odom_to_pose_converser.cpp ${CPP_FILES})
+add_dependencies(odom_to_pose_converser ${catkin_EXPORTED_TARGETS})
+target_link_libraries(odom_to_pose_converser ${catkin_LIBRARIES})

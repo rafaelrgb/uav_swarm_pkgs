@@ -1,0 +1,26 @@
+<?xml version="1.0"?>
+
+
+<robot name="quadrotor_full" xmlns:xacro="http://wiki.ros.org/xacro" >
+
+    <xacro:property name="ID" value="$(arg id)" />
+    <xacro:property name="robot_name" value="quadrotor_$(arg id)" />
+  
+    <xacro:property name="M_PI" value="3.1415926535897931" />
+    
+    <!-- Included URDF Files -->
+    
+    <!-- Base airframe -->
+    <xacro:include filename="$(find uav_swarm_description)/urdf/quadrotor_base_2.urdf.xacro" />
+    <quadrotor_base_macro/>
+    
+    <!-- IMU, Baro, Magnetic, GPS, Groundtruth sensors -->
+    <xacro:include filename="$(find uav_swarm_description)/urdf/sensors/quadrotor_sensors.urdf.xacro" />
+    <quadrotor_sensors robot_name="${robot_name}"/>
+
+    <!-- 4D velocity control -->
+    <xacro:include filename="$(find uav_swarm_description)/urdf/quadrotor_simple_controller.urdf.xacro" />
+    <quadrotor_controller robot_name="${robot_name}"/>
+    
+</robot>
+  

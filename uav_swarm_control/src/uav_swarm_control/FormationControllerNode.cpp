@@ -18,14 +18,15 @@ FormationControllerNode::FormationControllerNode(ros::NodeHandle *nh)
   : Node(nh, 10)
 {
     enableControl_ = false;
-    migrationPoint_.setValue( 0.0, 0.0, 0.0 );
+    migrationPoint_.setValue( 0.0, 0.0, 2.0 );
 
+    ros::param::get("/uav_swarm_control/leader_follower", leader_follower_);
     ros::param::get("/uav_swarm_control/simulation", simulation_);
     ros::param::get("/uav_swarm_control/fix_topic", fix_topic_);
     ros::param::get("/uav_swarm_control/odom_topic", odom_topic_);
     ros::param::get("/uav_swarm_control/cmd_vel_topic", cmd_vel_topic_);
     ros::param::get("/uav_swarm_control/max_vel", max_vel_);
-    ros::param::get("/uav_swarm_control/vision_distance_", vision_distance_);
+    ros::param::get("/uav_swarm_control/vision_distance", vision_distance_);
     ros::param::get("/uav_swarm_control/r1", r1_);
     ros::param::get("/uav_swarm_control/r2", r2_);
     ros::param::get("/uav_swarm_control/r3", r3_);
@@ -44,6 +45,14 @@ FormationControllerNode::FormationControllerNode(ros::NodeHandle *nh)
     formation_.orientation.y = 0.0;
     formation_.orientation.z = 0.0;
     formation_.orientation.w = 1.0;
+
+    leader_formation_.position.x = 0.0;
+    leader_formation_.position.y = 0.0;
+    leader_formation_.position.z = 0.0;
+    leader_formation_.orientation.x = 0.0;
+    leader_formation_.orientation.y = 0.0;
+    leader_formation_.orientation.z = 0.0;
+    leader_formation_.orientation.w = 1.0;
 
     migration_point_sub_ = nh->subscribe("/migration_point", 1, &FormationControllerNode::migrationPointCb, this);
     formation_points_sub_ = nh->subscribe("/formation_points", 1, &FormationControllerNode::formationPointsCb, this);
@@ -82,47 +91,33 @@ FormationControllerNode::~FormationControllerNode()
 
 void FormationControllerNode::controlLoop()
 {
-    // Calculate each rule's influence
-    tf::Vector3 v1, v2, v3, v4, vRes;
-    rule1(v1);
-    rule2(v2);
-    rule3(v3);
-    rule4(v4);
-
-    // Combine the rules
-    vRes.setX( r1_ * v1.getX() + r2_ * v2.getX() + r3_ * v3.getX() + r4_ * v4.getX() );
-    vRes.setY( r1_ * v1.getY() + r2_ * v2.getY() + r3_ * v3.getY() + r4_ * v4.getY() );
-    vRes.setZ( r1_ * v1.getZ() + r2_ * v2.getZ() + r3_ * v3.getZ() + r4_ * v4.getZ() );
-
-    // Limit vRes
-    double norm = vRes.length();
-    if ( norm >= max_vel_ )
-    {
-        vRes.normalize();
-        vRes *= max_vel_;
-    }
-
-    // Publish velocity for diagnostics purpose
-    publishVectors( v1, v2, v3, v4, vRes );
-
     // PUBLISH VELOCITY
     if ( enableControl_ == true )
     {
-        // Transform vRes into the quadrotor's base frame
-        geometry_msgs::Vector3Stamped stamped_in, stamped_out;
+        // Calculate each rule's influence
+        tf::Vector3 v1, v2, v3, v4, vRes;
+        rule1(v1);
+        rule2(v2);
+        rule3(v3);
+        rule4(v4);
 
-        stamped_in.header.frame_id = "/map";
-        stamped_in.vector.x = vRes.getX();
-        stamped_in.vector.y = vRes.getY();
-        stamped_in.vector.z = vRes.getZ();
+        // Combine the rules
+        vRes.setX( r1_ * v1.getX() + r2_ * v2.getX() + r3_ * v3.getX() + r4_ * v4.getX() );
+        vRes.setY( r1_ * v1.getY() + r2_ * v2.getY() + r3_ * v3.getY() + r4_ * v4.getY() );
+        vRes.setZ( r1_ * v1.getZ() + r2_ * v2.getZ() + r3_ * v3.getZ() + r4_ * v4.getZ() );
 
-        listener_.transformVector(tf_frame_, stamped_in, stamped_out);
+        // Limit vRes
+        double norm = vRes.length();
+        if ( norm >= max_vel_ )
+        {
+            vRes.normalize();
+            vRes *= max_vel_;
+        }
 
-        // Retrieve the data from stamped_out and publish it
-        tf::Vector3 vResTransformed;
-        vResTransformed.setValue(stamped_out.vector.x, stamped_out.vector.y, stamped_out.vector.z);
+        // Publish velocity for diagnostics purpose
+        publishVectors( v1, v2, v3, v4, vRes );
 
-        publishVelocity( vResTransformed.getX(), vResTransformed.getY(), vResTransformed.getZ() );
+        publishVelocity( vRes.getX(), vRes.getY(), vRes.getZ() );
     }
 
     publishUavOdom();
@@ -150,10 +145,10 @@ void FormationControllerNode::controlLoop()
     }*/
 
     // TESTE: Imprimir as informações do drone
-    ROS_INFO_STREAM("Eu sou o quadrotor " << id_ << "\n"
+    /*ROS_INFO_STREAM("Eu sou o quadrotor " << id_ << "\n"
                       << "Minha posicao e: x = " << odom_.pose.pose.position.x << ", y = " << odom_.pose.pose.position.y << ", z = " << odom_.pose.pose.position.z << "\n"
                       << "Meu migration point e: x = " << migrationPoint_.getX() << ", y = " << migrationPoint_.getY() << ", z = " << migrationPoint_.getZ() << "\n"
-                      << "Minha pose na formacao e: " << formation_.position.x << ", y = " << formation_.position.y << ", z = " << formation_.position.z << "\n");
+                      << "Minha pose na formacao e: x = " << formation_.position.x << ", y = " << formation_.position.y << ", z = " << formation_.position.z << "\n");*/
 }
 
 void FormationControllerNode::publishUavOdom()
@@ -177,14 +172,26 @@ void FormationControllerNode::publishUavOdom()
 
 void FormationControllerNode::publishVelocity( double velX, double velY, double velZ )
 {
+    // Transform the values received into the quadrotor's base frame
+    geometry_msgs::Vector3Stamped stamped_in, stamped_out;
+
+    stamped_in.header.frame_id = "/map";
+    stamped_in.vector.x = velX;
+    stamped_in.vector.y = velY;
+    stamped_in.vector.z = velZ;
+
+    listener_.transformVector(tf_frame_, stamped_in, stamped_out);
+
+    // Create a Twist message and publish
+
     //geometry_msgs::TwistStamped msg;
     geometry_msgs::Twist msg;
 
     //msg.twist.linear.x = velX;
     //msg.twist.linear.y = velY;
-    msg.linear.x = velX;
-    msg.linear.y = velY;
-    msg.linear.z = velZ;
+    msg.linear.x = stamped_out.vector.x;
+    msg.linear.y = stamped_out.vector.y;
+    msg.linear.z = stamped_out.vector.z;
 
     cmd_vel_pub_.publish(msg);
 }
@@ -224,7 +231,16 @@ void FormationControllerNode::migrationPointCb( const geometry_msgs::PointConstP
 
 void FormationControllerNode::formationPointsCb(const geometry_msgs::PoseArrayConstPtr &msg )
 {
-    if ( msg->poses.size() > id_ )
+
+    leader_formation_.position.x = msg->poses[0].position.x;
+    leader_formation_.position.y = msg->poses[0].position.y;
+    leader_formation_.position.z = msg->poses[0].position.z;
+    leader_formation_.orientation.x = msg->poses[0].orientation.x;
+    leader_formation_.orientation.y = msg->poses[0].orientation.y;
+    leader_formation_.orientation.z = msg->poses[0].orientation.z;
+    leader_formation_.orientation.w = msg->poses[0].orientation.w;
+
+    if ( msg->poses.size() >= id_ )
     {
         formation_.position.x = msg->poses[id_ - 1].position.x;
         formation_.position.y = msg->poses[id_ - 1].position.y;
@@ -475,7 +491,7 @@ void FormationControllerNode::rule4( tf::Vector3& v )
 
     if ( n > 0 )
     {
-        if ( id_ != 1 )
+        if ( leader_follower_ && id_ != 1 )
         {
             // Move according to leader
             tf::Vector3 leader( 0.0, 0.0, 0.0 );
@@ -489,9 +505,25 @@ void FormationControllerNode::rule4( tf::Vector3& v )
                 }
             }
 
-            v.setX( formation_.position.x + leader.getX() - odom_.pose.pose.position.x );
-            v.setY( formation_.position.y + leader.getY() - odom_.pose.pose.position.y );
-            v.setZ( formation_.position.z + leader.getZ() - odom_.pose.pose.position.z );
+            // Transform the formation position into the leader's frame
+            /*geometry_msgs::Vector3Stamped stamped_in, stamped_out;
+
+            stamped_in.header.frame_id = "/uav1/base_link";
+            stamped_in.vector.x = formation_.position.x;
+            stamped_in.vector.y = formation_.position.y;
+            stamped_in.vector.z = formation_.position.z;
+
+            listener_.transformVector("/map", stamped_in, stamped_out);
+
+
+            v.setX( stamped_out.vector.x + leader.getX() - leader_formation_.position.x - odom_.pose.pose.position.x );
+            v.setY( stamped_out.vector.y + leader.getY() - leader_formation_.position.y - odom_.pose.pose.position.y );
+            v.setZ( stamped_out.vector.z + leader.getZ() - leader_formation_.position.z - odom_.pose.pose.position.z );*/
+
+            v.setX( formation_.position.x + leader.getX() - leader_formation_.position.x - odom_.pose.pose.position.x );
+            v.setY( formation_.position.y + leader.getY() - leader_formation_.position.y - odom_.pose.pose.position.y );
+            v.setZ( formation_.position.z + leader.getZ() - leader_formation_.position.z - odom_.pose.pose.position.z );
+
         }
         else
         {

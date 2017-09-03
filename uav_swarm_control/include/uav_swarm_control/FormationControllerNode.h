@@ -58,6 +58,7 @@ private:
 
   // Enable control
   bool enableControl_;
+  bool leader_follower_;
 
   // Rules weights
   double r1_;
@@ -69,6 +70,7 @@ private:
   nav_msgs::Odometry odom_;
   tf::Vector3 migrationPoint_;
   geometry_msgs::Pose formation_;
+  geometry_msgs::Pose leader_formation_;
   std::vector<uav_swarm_msgs::OdometryWithUavId> neighbors_;
 
   // ROS objects
