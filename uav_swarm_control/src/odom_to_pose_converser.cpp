@@ -18,7 +18,7 @@ void odom1Cb( const nav_msgs::OdometryPtr& msg )
   pose.orientation.z = msg->pose.pose.orientation.z;
   pose.orientation.w = msg->pose.pose.orientation.w;
 
-  pose1_pub.publish(msg);
+  pose1_pub.publish(pose);
 }
 
 void odom2Cb( const nav_msgs::OdometryPtr& msg )
@@ -33,7 +33,7 @@ void odom2Cb( const nav_msgs::OdometryPtr& msg )
   pose.orientation.z = msg->pose.pose.orientation.z;
   pose.orientation.w = msg->pose.pose.orientation.w;
 
-  pose2_pub.publish(msg);
+  pose2_pub.publish(pose);
 }
 
 void odom3Cb( const nav_msgs::OdometryPtr& msg )
@@ -48,7 +48,7 @@ void odom3Cb( const nav_msgs::OdometryPtr& msg )
   pose.orientation.z = msg->pose.pose.orientation.z;
   pose.orientation.w = msg->pose.pose.orientation.w;
 
-  pose3_pub.publish(msg);
+  pose3_pub.publish(pose);
 }
 
 void odom4Cb( const nav_msgs::OdometryPtr& msg )
@@ -63,7 +63,7 @@ void odom4Cb( const nav_msgs::OdometryPtr& msg )
   pose.orientation.z = msg->pose.pose.orientation.z;
   pose.orientation.w = msg->pose.pose.orientation.w;
 
-  pose4_pub.publish(msg);
+  pose4_pub.publish(pose);
 }
 
 
@@ -73,10 +73,10 @@ int main(int argc, char **argv)
   ros::init(argc, argv, "odom_to_pose_converser");
   ros::NodeHandle nh;
 
-  odom1_sub = nh.subscribe("/quadrotor_1/state", 100, odom1Cb);
-  odom2_sub = nh.subscribe("/quadrotor_2/state", 100, odom2Cb);
-  odom3_sub = nh.subscribe("/quadrotor_3/state", 100, odom3Cb);
-  odom4_sub = nh.subscribe("/quadrotor_4/state", 100, odom4Cb);
+  odom1_sub = nh.subscribe("/quadrotor_1/ground_truth/state", 100, odom1Cb);
+  odom2_sub = nh.subscribe("/quadrotor_2/ground_truth/state", 100, odom2Cb);
+  odom3_sub = nh.subscribe("/quadrotor_3/ground_truth/state", 100, odom3Cb);
+  odom4_sub = nh.subscribe("/quadrotor_4/ground_truth/state", 100, odom4Cb);
 
   pose1_pub = nh.advertise<geometry_msgs::Pose>("/quadrotor_1/pose", 100);
   pose2_pub = nh.advertise<geometry_msgs::Pose>("/quadrotor_2/pose", 100);

@@ -65,3 +65,7 @@ target_link_libraries(migration_point_publisher ${catkin_LIBRARIES})
 add_executable(odom_to_pose_converser src/odom_to_pose_converser.cpp ${CPP_FILES})
 add_dependencies(odom_to_pose_converser ${catkin_EXPORTED_TARGETS})
 target_link_libraries(odom_to_pose_converser ${catkin_LIBRARIES})
+
+add_executable(formation_change_node src/formation_change_node.cpp ${CPP_FILES})
+add_dependencies(formation_change_node ${catkin_EXPORTED_TARGETS})
+target_link_libraries(formation_change_node ${catkin_LIBRARIES})
