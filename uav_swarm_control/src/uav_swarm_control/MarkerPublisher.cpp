@@ -27,6 +27,8 @@ MarkerPublisher::MarkerPublisher(ros::NodeHandle *nh)
       }
     }
 
+    id_ = id_ - 1;
+
     v1_sub_ = nh->subscribe("v1", 1, &MarkerPublisher::v1Cb, this);
     v2_sub_ = nh->subscribe("v2", 1, &MarkerPublisher::v2Cb, this);
     v3_sub_ = nh->subscribe("v3", 1, &MarkerPublisher::v3Cb, this);
@@ -105,26 +107,31 @@ void MarkerPublisher::controlLoop()
             v4Marker.pose.position.z = vResMarker.pose.position.z = transform.getOrigin().z();
     // For the orientation, only the yaw axis rotation is important and is calculated using the x and y of the vectors
     tf::Quaternion q;
+    //q.setRPY( atan2( v1_.y, v1_.z ), atan2( v1_.x, v1_.z ), atan2( v1_.y, v1_.x ) );
     q.setRPY( 0.0, 0.0, atan2( v1_.y, v1_.x ) );
     v1Marker.pose.orientation.x = q.getX();
     v1Marker.pose.orientation.y = q.getY();
     v1Marker.pose.orientation.z = q.getZ();
     v1Marker.pose.orientation.w = q.getW();
-   q.setRPY( 0.0, 0.0, atan2( v2_.y, v2_.x ) );
+    //q.setRPY( atan2( v2_.y, v2_.z ), atan2( v2_.x, v2_.z ), atan2( v2_.y, v2_.x ) );
+    q.setRPY( 0.0, 0.0, atan2( v2_.y, v2_.x ) );
     v2Marker.pose.orientation.x = q.getX();
     v2Marker.pose.orientation.y = q.getY();
     v2Marker.pose.orientation.z = q.getZ();
     v2Marker.pose.orientation.w = q.getW();
+    //q.setRPY( atan2( v3_.y, v3_.z ), atan2( v3_.x, v3_.z ), atan2( v3_.y, v3_.x ) );
     q.setRPY( 0.0, 0.0, atan2( v3_.y, v3_.x ) );
     v3Marker.pose.orientation.x = q.getX();
     v3Marker.pose.orientation.y = q.getY();
     v3Marker.pose.orientation.z = q.getZ();
     v3Marker.pose.orientation.w = q.getW();
+    //q.setRPY( atan2( v4_.y, v4_.z ), atan2( v4_.x, v4_.z ), atan2( v4_.y, v4_.x ) );
     q.setRPY( 0.0, 0.0, atan2( v4_.y, v4_.x ) );
     v4Marker.pose.orientation.x = q.getX();
     v4Marker.pose.orientation.y = q.getY();
     v4Marker.pose.orientation.z = q.getZ();
     v4Marker.pose.orientation.w = q.getW();
+    //q.setRPY( atan2( vRes_.y, vRes_.z ), atan2( vRes_.x, vRes_.z ), atan2( vRes_.y, vRes_.x ) );
     q.setRPY( 0.0, 0.0, atan2( vRes_.y, vRes_.x ) );
     vResMarker.pose.orientation.x = q.getX();
     vResMarker.pose.orientation.y = q.getY();
@@ -159,9 +166,9 @@ void MarkerPublisher::controlLoop()
     v1Marker.color.a = v2Marker.color.a = v3Marker.color.a = v4Marker.color.a = vResMarker.color.a = 1.0;
 
     // Publish the markers
-    marker_pub_.publish(v1Marker);
+    //marker_pub_.publish(v1Marker);
     marker_pub_.publish(v2Marker);
-    marker_pub_.publish(v3Marker);
+    //marker_pub_.publish(v3Marker);
     marker_pub_.publish(v4Marker);
     marker_pub_.publish(vResMarker);
 }

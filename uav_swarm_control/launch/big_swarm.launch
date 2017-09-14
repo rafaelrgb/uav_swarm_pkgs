@@ -7,10 +7,10 @@
     <arg name="fix_topic" default="fix"/>
     <arg name="odom_topic" default="ground_truth/state"/>
     <arg name="cmd_vel_topic" default="cmd_vel"/>
-    <arg name="max_vel" default="5.0"/>
-    <arg name="vision_distance" default="20.0"/>
+    <arg name="max_vel" default="2.0"/>
+    <arg name="vision_distance" default="10.0"/>
     <arg name="r1" default="0.1"/>
-    <arg name="r2" default="0.1"/>
+    <arg name="r2" default="1.0"/>
     <arg name="r3" default="0.0"/>
     <arg name="r4" default="1.0"/>
     <arg name="quadrotor_1_x" default="-5.0"/>

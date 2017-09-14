@@ -18,14 +18,14 @@ SwarmControllerNode::SwarmControllerNode(ros::NodeHandle *nh)
   : Node(nh, 10)
 {
     enableControl_ = false;
-    migrationPoint_.setValue( 0.0, 0.0, 0.0 );
+    migrationPoint_.setValue( 0.0, 0.0, 2.0 );
 
     ros::param::get("/uav_swarm_control/simulation", simulation_);
     ros::param::get("/uav_swarm_control/fix_topic", fix_topic_);
     ros::param::get("/uav_swarm_control/odom_topic", odom_topic_);
     ros::param::get("/uav_swarm_control/cmd_vel_topic", cmd_vel_topic_);
     ros::param::get("/uav_swarm_control/max_vel", max_vel_);
-    ros::param::get("/uav_swarm_control/vision_distance_", vision_distance_);
+    ros::param::get("/uav_swarm_control/vision_distance", vision_distance_);
     ros::param::get("/uav_swarm_control/r1", r1_);
     ros::param::get("/uav_swarm_control/r2", r2_);
     ros::param::get("/uav_swarm_control/r3", r3_);

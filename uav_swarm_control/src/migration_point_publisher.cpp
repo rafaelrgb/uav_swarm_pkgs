@@ -79,7 +79,7 @@ int main(int argc, char **argv)
   pose.orientation.w = 1.0;
   formation_msg.poses.push_back(pose);
   pose.position.x = 0.0;
-  pose.position.y = -5.0;
+  pose.position.y = 5.0;
   pose.position.z = 0.0;
   pose.orientation.x = 0.0;
   pose.orientation.y = 0.0;
@@ -87,7 +87,7 @@ int main(int argc, char **argv)
   pose.orientation.w = 1.0;
   formation_msg.poses.push_back(pose);
   pose.position.x = 0.0;
-  pose.position.y = 5.0;
+  pose.position.y = -5.0;
   pose.position.z = 0.0;
   pose.orientation.x = 0.0;
   pose.orientation.y = 0.0;
@@ -104,7 +104,7 @@ int main(int argc, char **argv)
 
 
   // Wait more 5 seconds for the UAVs to achieve the formation and publish the first migration_point
-  sleep(7);
+  sleep(15);
 
   geometry_msgs::Point migration_point_msg;
   migration_point_msg.x = 30.0;
@@ -114,7 +114,7 @@ int main(int argc, char **argv)
   migration_point_pub.publish(migration_point_msg);
 
   // Wait 20 seconds and publish the second migration point
-  sleep(7);
+  sleep(30);
   migration_point_msg.x = 30.0;
   migration_point_msg.y = 30.0;
   migration_point_msg.z = 2.0;

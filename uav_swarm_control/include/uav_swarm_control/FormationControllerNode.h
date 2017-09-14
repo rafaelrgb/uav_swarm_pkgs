@@ -46,9 +46,12 @@ private:
   int id_;
   double max_vel_;
   double vision_distance_;
+  double origin_lat_;
+  double origin_lon_;
   std::string fix_topic_;
   std::string odom_topic_;
   std::string cmd_vel_topic_;
+  std::string fixed_frame_;
   std::string tf_frame_;
 
   // Differences from current position to origin
@@ -58,6 +61,7 @@ private:
 
   // Enable control
   bool enableControl_;
+  bool startingPositionCalculated_;
   bool leader_follower_;
 
   // Rules weights

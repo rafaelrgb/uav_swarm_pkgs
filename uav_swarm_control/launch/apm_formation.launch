@@ -1,0 +1,130 @@
+<launch>
+
+    <!-- Specific to the apm simulation -->
+    <param name="uav_model" command="$(find xacro)/xacro --inorder $(find uav_swarm_description)/urdf/quadrotor.urdf.xacro" />
+    <arg name="pluginlists_yaml" default="$(find mavros)/launch/apm_pluginlists.yaml" />
+    <arg name="config_yaml" default="$(find uav_swarm_control)/launch/apm_config.yaml" />
+    <arg name="uav0_id" default="1" />
+    <arg name="uav1_id" default="2" />
+    <arg name="uav2_id" default="3" />
+
+    <!-- arguments that can be passed by the command line or read from a file -->
+    <arg name="record_position" default="false"/>
+    <arg name="leader_follower" default="true"/>
+    <arg name="simulation" default="false"/>
+    <arg name="origin_lat" default="-22.413949"/>
+    <arg name="origin_lon" default="-45.446555"/>
+    <arg name="fix_topic" default="mavros/global_position/global"/>
+    <arg name="odom_topic" default="mavros/local_position/odom"/>
+    <arg name="cmd_vel_topic" default="mavros/setpoint_velocity/cmd_vel"/>
+    <arg name="fixed_frame" default="world"/>
+    <arg name="max_vel" default="1.0"/>
+    <arg name="vision_distance" default="3.0"/>
+    <arg name="r1" default="0.0"/>
+    <arg name="r2" default="1.0"/>
+    <arg name="r3" default="0.0"/>
+    <arg name="r4" default="1.0"/>
+    <arg name="model" default="$(find viscap_gazebo)/urdf/quadrotor.urdf.xacro"/>
+    <arg name="quadrotor_1_x" default="0.0"/>
+    <arg name="quadrotor_1_y" default="0.0"/>
+    <arg name="quadrotor_1_z" default="2.0"/>
+    <arg name="quadrotor_1_R" default="0.0"/>
+    <arg name="quadrotor_1_P" default="0.0"/>
+    <arg name="quadrotor_1_Y" default="0.0"/>
+    <arg name="quadrotor_2_x" default="0.0"/>
+    <arg name="quadrotor_2_y" default="5.0"/>
+    <arg name="quadrotor_2_z" default="2.0"/>
+    <arg name="quadrotor_2_R" default="0.0"/>
+    <arg name="quadrotor_2_P" default="0.0"/>
+    <arg name="quadrotor_2_Y" default="0.0"/>
+    <arg name="quadrotor_3_x" default="0.0"/>
+    <arg name="quadrotor_3_y" default="-5.0"/>
+    <arg name="quadrotor_3_z" default="2.0"/>
+    <arg name="quadrotor_3_R" default="0.0"/>
+    <arg name="quadrotor_3_P" default="0.0"/>
+    <arg name="quadrotor_3_Y" default="0.0"/>
+
+
+    <!-- global parameters -->
+    <param name="/uav_swarm_control/leader_follower" value="$(arg leader_follower)" />
+    <param name="/uav_swarm_control/simulation" value="$(arg simulation)" />
+    <param name="/uav_swarm_control/origin_lat" value="$(arg origin_lat)" />
+    <param name="/uav_swarm_control/origin_lon" value="$(arg origin_lon)" />
+    <param name="/uav_swarm_control/fix_topic" value="$(arg fix_topic)"/>
+    <param name="/uav_swarm_control/odom_topic" value="$(arg odom_topic)"/>
+    <param name="/uav_swarm_control/cmd_vel_topic" value="$(arg cmd_vel_topic)"/>
+    <param name="/uav_swarm_control/fixed_frame" value="$(arg fixed_frame)"/>
+    <param name="/uav_swarm_control/max_vel" value="$(arg max_vel)"/>
+    <param name="/uav_swarm_control/vision_distance" value="$(arg vision_distance)"/>
+    <param name="/uav_swarm_control/r1" value="$(arg r1)"/>
+    <param name="/uav_swarm_control/r2" value="$(arg r2)"/>
+    <param name="/uav_swarm_control/r3" value="$(arg r3)"/>
+    <param name="/uav_swarm_control/r4" value="$(arg r4)"/>
+
+
+
+
+    <group ns="uav0">
+        <param name="uav_id" value="$(arg uav0_id)" />
+        <param name="tf_frame" value="uav0/base_link"/>
+
+        <node pkg="mavros" type="mavros_node" name="mavros" required="true" clear_params="true" >
+                <param name="fcu_url" value="udp://127.0.0.1:14551@" />
+                <param name="gcs_url" value="" />
+                <param name="target_system_id" value="1" />
+                <param name="target_component_id" value="1" />
+
+                <!-- load blacklist, config -->
+                <rosparam command="load" file="$(arg pluginlists_yaml)" />
+                <rosparam command="load" file="$(arg config_yaml)" />
+        </node>
+
+        <node pkg="uav_swarm_control" type="formation_controller_node" name="formation_controller_node" output="screen" />
+
+        <node pkg="uav_swarm_control" type="marker_publisher" name="marker_publisher" />
+    </group>
+
+    <group ns="uav1">
+            <param name="uav_id" value="$(arg uav1_id)" />
+            <param name="tf_frame" value="uav1/base_link"/>
+
+            <node pkg="mavros" type="mavros_node" name="mavros" required="true" clear_params="true" >
+                    <param name="fcu_url" value="udp://127.0.0.1:14561@" />
+                    <param name="gcs_url" value="" />
+                    <param name="target_system_id" value="1" />
+                    <param name="target_component_id" value="1" />
+
+                    <!-- load blacklist, config -->
+                    <rosparam command="load" file="$(arg pluginlists_yaml)" />
+                    <rosparam command="load" file="$(arg config_yaml)" />
+            </node>
+
+            <node pkg="uav_swarm_control" type="formation_controller_node" name="formation_controller_node" output="screen" />
+
+            <node pkg="uav_swarm_control" type="marker_publisher" name="marker_publisher" />
+    </group>
+
+    <group ns="uav2">
+        <param name="uav_id" value="$(arg uav2_id)" />
+        <param name="tf_frame" value="uav2/base_link"/>
+
+        <node pkg="mavros" type="mavros_node" name="mavros" required="true" clear_params="true" >
+                <param name="fcu_url" value="udp://127.0.0.1:14571@" />
+                <param name="gcs_url" value="" />
+                <param name="target_system_id" value="1" />
+                <param name="target_component_id" value="1" />
+
+                <!-- load blacklist, config -->
+                <rosparam command="load" file="$(arg pluginlists_yaml)" />
+                <rosparam command="load" file="$(arg config_yaml)" />
+        </node>
+
+        <node pkg="uav_swarm_control" type="formation_controller_node" name="formation_controller_node" output="screen" />
+
+        <node pkg="uav_swarm_control" type="marker_publisher" name="marker_publisher" />
+    </group>
+
+    <!-- Run RVIZ-->
+    <node name="$(anon rviz)" pkg="rviz" type="rviz" args="-d $(find uav_swarm_control)/uav_swarm_control.rviz" />
+
+</launch>

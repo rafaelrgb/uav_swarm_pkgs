@@ -65,7 +65,7 @@ poses:
     w: 1.0
 - position:
     x: 0.0
-    y: 10.0
+    y: -5.0
     z: 0.0
   orientation:
     x: 0.0

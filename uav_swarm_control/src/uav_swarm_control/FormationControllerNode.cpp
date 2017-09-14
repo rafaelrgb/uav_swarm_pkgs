@@ -15,16 +15,20 @@ namespace uav_swarm_control
 {
 
 FormationControllerNode::FormationControllerNode(ros::NodeHandle *nh)
-  : Node(nh, 10)
+  : Node(nh, 100)
 {
     enableControl_ = false;
+    startingPositionCalculated_ = false;
     migrationPoint_.setValue( 0.0, 0.0, 2.0 );
 
     ros::param::get("/uav_swarm_control/leader_follower", leader_follower_);
     ros::param::get("/uav_swarm_control/simulation", simulation_);
+    ros::param::get("/uav_swarm_control/origin_lat", origin_lat_);
+    ros::param::get("/uav_swarm_control/origin_lon", origin_lon_);
     ros::param::get("/uav_swarm_control/fix_topic", fix_topic_);
     ros::param::get("/uav_swarm_control/odom_topic", odom_topic_);
     ros::param::get("/uav_swarm_control/cmd_vel_topic", cmd_vel_topic_);
+    ros::param::get("/uav_swarm_control/fixed_frame", fixed_frame_);
     ros::param::get("/uav_swarm_control/max_vel", max_vel_);
     ros::param::get("/uav_swarm_control/vision_distance", vision_distance_);
     ros::param::get("/uav_swarm_control/r1", r1_);
@@ -61,8 +65,15 @@ FormationControllerNode::FormationControllerNode(ros::NodeHandle *nh)
     enable_control_sub_ = nh->subscribe("/enable_control", 1, &FormationControllerNode::enableControlCb, this);
     uavs_odom_sub_ = nh->subscribe("/uavs_odom", 10, &FormationControllerNode::uavsOdomCb, this);
     uav_odom_pub_ = nh->advertise<uav_swarm_msgs::OdometryWithUavId>("/uavs_odom", 10);
-    //cmd_vel_pub_ = nh->advertise<geometry_msgs::TwistStamped>(cmd_vel_topic_, 10);
-    cmd_vel_pub_ = nh->advertise<geometry_msgs::Twist>(cmd_vel_topic_, 10);
+
+    if ( simulation_ == true )
+    {
+      cmd_vel_pub_ = nh->advertise<geometry_msgs::Twist>(cmd_vel_topic_, 10);
+    }
+    else
+    {
+      cmd_vel_pub_ = nh->advertise<geometry_msgs::TwistStamped>(cmd_vel_topic_, 10);
+    }
 
     v1_pub_ = nh->advertise<geometry_msgs::Point>("v1", 10);
     v2_pub_ = nh->advertise<geometry_msgs::Point>("v2", 10);
@@ -149,6 +160,9 @@ void FormationControllerNode::controlLoop()
                       << "Minha posicao e: x = " << odom_.pose.pose.position.x << ", y = " << odom_.pose.pose.position.y << ", z = " << odom_.pose.pose.position.z << "\n"
                       << "Meu migration point e: x = " << migrationPoint_.getX() << ", y = " << migrationPoint_.getY() << ", z = " << migrationPoint_.getZ() << "\n"
                       << "Minha pose na formacao e: x = " << formation_.position.x << ", y = " << formation_.position.y << ", z = " << formation_.position.z << "\n");*/
+
+    // TESTE: Imprimir a variável simulation_
+    //ROS_INFO_STREAM("simulation_ = " << simulation_);
 }
 
 void FormationControllerNode::publishUavOdom()
@@ -172,28 +186,38 @@ void FormationControllerNode::publishUavOdom()
 
 void FormationControllerNode::publishVelocity( double velX, double velY, double velZ )
 {
-    // Transform the values received into the quadrotor's base frame
-    geometry_msgs::Vector3Stamped stamped_in, stamped_out;
-
-    stamped_in.header.frame_id = "/map";
-    stamped_in.vector.x = velX;
-    stamped_in.vector.y = velY;
-    stamped_in.vector.z = velZ;
-
-    listener_.transformVector(tf_frame_, stamped_in, stamped_out);
-
     // Create a Twist message and publish
+    if ( simulation_ == true )
+    {
+      // Transform the values received into the quadrotor's base frame
+      geometry_msgs::Vector3Stamped stamped_in, stamped_out;
 
-    //geometry_msgs::TwistStamped msg;
-    geometry_msgs::Twist msg;
+      stamped_in.header.frame_id = fixed_frame_;
+      stamped_in.vector.x = velX;
+      stamped_in.vector.y = velY;
+      stamped_in.vector.z = velZ;
 
-    //msg.twist.linear.x = velX;
-    //msg.twist.linear.y = velY;
-    msg.linear.x = stamped_out.vector.x;
-    msg.linear.y = stamped_out.vector.y;
-    msg.linear.z = stamped_out.vector.z;
+      listener_.transformVector(tf_frame_, stamped_in, stamped_out);
 
-    cmd_vel_pub_.publish(msg);
+      geometry_msgs::Twist msg;
+
+      msg.linear.x = stamped_out.vector.x;
+      msg.linear.y = stamped_out.vector.y;
+      msg.linear.z = stamped_out.vector.z;
+
+      cmd_vel_pub_.publish(msg);
+    }
+    else
+    {
+      geometry_msgs::TwistStamped msg;
+
+      msg.twist.linear.x = velX;
+      msg.twist.linear.y = velY;
+      msg.twist.linear.z = velZ;
+
+      cmd_vel_pub_.publish(msg);
+    }
+
 }
 
 void FormationControllerNode::publishVectors( const tf::Vector3 &v1, const tf::Vector3 &v2, const tf::Vector3 &v3,
@@ -255,19 +279,20 @@ void FormationControllerNode::formationPointsCb(const geometry_msgs::PoseArrayCo
 void FormationControllerNode::globalPositionCb( const sensor_msgs::NavSatFix &msg )
 {
     // Quando a primeira mensagem de GPS chegar, calcular dx_ e dy_
-    /*if ( !initialDeltasCalculated_ )
-    {
-        double originLat, originLon;
-        ros::param::get("/uav_swarm_control/origin_lat", originLat);
-        ros::param::get("/uav_swarm_control/origin_lon", originLon);
-        double lat = msg.latitude;
-        double lon = msg.longitude;
-        dx_ = haversines( originLat, originLon, originLat, lon );
-        dy_ = haversines( originLat, originLon, lat, originLon );
-        if ( (lon - originLon) < 0 ) dx_ *= -1;
-        if ( (lat - originLat) < 0 ) dy_ *= -1;
-        initialDeltasCalculated_ = true;
-    }*/
+  if( simulation_ == false )
+  {
+      if ( !startingPositionCalculated_ )
+      {
+          double lat = msg.latitude;
+          double lon = msg.longitude;
+          dx_ = haversines( origin_lat_, origin_lon_, origin_lat_, lon );
+          dy_ = haversines( origin_lat_, origin_lon_, lat, origin_lon_ );
+          if ( (lon - origin_lon_) < 0 ) dx_ *= -1;
+          if ( (lat - origin_lat_) < 0 ) dy_ *= -1;
+          startingPositionCalculated_ = true;
+      }
+
+  }
 }
 
 void FormationControllerNode::odomCb( const nav_msgs::OdometryConstPtr &msg )
@@ -309,7 +334,7 @@ void FormationControllerNode::odomCb( const nav_msgs::OdometryConstPtr &msg )
                     odom_.pose.pose.position.y,
                     odom_.pose.pose.position.z
                 )
-            ), ros::Time::now(), "map", tf_frame_
+            ), ros::Time::now(), fixed_frame_, tf_frame_
         )
     );
 }
